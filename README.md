@@ -2,17 +2,17 @@
 
 Just another Steam Achievement Viewer that supports custom grouping of acheivemnts. Some uses are game collection that group multiplegames acheivments together or seperating DLC achievments from the base game
 
-Groups for Kingdom Hearts 1.5 collection.
+### Groups for Kingdom Hearts 1.5 collection.
 ![image info](/images/Categories.png)
 
-Achievemnts View
+### Achievemnts View
 ![image info](/images/Achievements.png)
 
 ## Adding a new Mapping for a Steam Game
-
-1. Create a file name {appid}.json where {appid} is the app id that matches your Steam Game
+1. Create a file name {appid}.json in the achievementMaps folder where {appid} is the app id that matches your Steam Game
 2. Create a Field with the Name of the Section you wish to create for a set of Achievements and set the value of that field to the set of achievement IDs you wish to group.
 3. Steam Achievement IDs can be queried using the Steam API. (https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/). I suggest using [this website](https://steamapi.xpaw.me/#) to run the API queries.
+4. Once the achievement groups are set in the json file, Start Steam Acheivement Viewer and click on your game. The achievements should now be grouped.
 
 ### Example for Kingdom Hearts 1.5/2.5 colletion (app id 2552430). 
 4 Sections are created in this example (which matxhes the above picture). The ACH_001 ids are the IDs for the Achievement returned by the Steam API. 
