@@ -40,22 +40,24 @@
             // 
             // gamesListbox
             // 
+            gamesListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             gamesListbox.FormattingEnabled = true;
             gamesListbox.ItemHeight = 15;
             gamesListbox.Location = new Point(12, 47);
             gamesListbox.Name = "gamesListbox";
-            gamesListbox.Size = new Size(280, 754);
+            gamesListbox.Size = new Size(280, 439);
             gamesListbox.TabIndex = 2;
             gamesListbox.SelectedIndexChanged += gamesListbox_SelectedIndexChanged;
             // 
             // achWebView
             // 
             achWebView.AllowExternalDrop = true;
+            achWebView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             achWebView.CreationProperties = null;
             achWebView.DefaultBackgroundColor = Color.White;
             achWebView.Location = new Point(298, 47);
             achWebView.Name = "achWebView";
-            achWebView.Size = new Size(821, 754);
+            achWebView.Size = new Size(863, 442);
             achWebView.TabIndex = 3;
             achWebView.ZoomFactor = 1D;
             // 
@@ -115,7 +117,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1131, 815);
+            ClientSize = new Size(1173, 503);
             Controls.Add(checkBox1);
             Controls.Add(label3);
             Controls.Add(label2);

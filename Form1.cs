@@ -40,6 +40,7 @@ namespace SteamAchievmentViewer
 
 
             sortByComboBox.SelectedIndex = 0;
+            checkBox1.Checked = true;
 
             // Generate Intro HTML
 
