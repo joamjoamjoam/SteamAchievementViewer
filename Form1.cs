@@ -11,6 +11,8 @@ namespace SteamAchievmentViewer
         public SteamGame selectedGame = null;
         public String htmlPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\index.html";
         public String introPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\intro.html";
+        public String hiddenImgPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\locked.png";
+        public String configPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\config\\config.json";
         private String steamWebKey = "";
         private ulong steamAcctId = 0;
 
@@ -20,7 +22,7 @@ namespace SteamAchievmentViewer
 
             try
             {
-                JObject configObj = JObject.Parse(File.ReadAllText("config/config.json"));
+                JObject configObj = JObject.Parse(File.ReadAllText(configPath));
                 steamWebKey = configObj["steamWebKey"] == null ? "" : (String)configObj["steamWebKey"];
                 steamAcctId = (ulong)configObj["steamAcctID"];
 
@@ -44,9 +46,9 @@ namespace SteamAchievmentViewer
 
             // Generate Intro HTML
 
-            File.WriteAllText("intro.html", $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body>{((steamClient == null) ? "<h1>Configuration Needed!!</h1> <h3>Load your Steam Web Key and Steam Account ID (SteamID) in config/config.json</h3><p>Get Your Steam Web Key <a href=\"https://steamcommunity.com/dev/apikey\">HERE</a></p><p>Get Your SteamAccount ID (SteamID) <a href=\"https://steamdb.info/calculator/\">HERE</a></p>" : "<h1>Select Game From Game List</h1>")}</body>");
+            File.WriteAllText(introPath, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body>{((steamClient == null) ? "<h1>Configuration Needed!!</h1> <h3>Load your Steam Web Key and Steam Account ID (SteamID) in config/config.json</h3><p>Get Your Steam Web Key <a href=\"https://steamcommunity.com/dev/apikey\">HERE</a></p><p>Get Your SteamAccount ID (SteamID) <a href=\"https://steamdb.info/calculator/\">HERE</a></p>" : "<h1>Select Game From Game List</h1>")}</body>");
             achWebView.Source = new Uri(introPath);
-            Properties.Resources.locked.Save("locked.png", System.Drawing.Imaging.ImageFormat.Png);
+            Properties.Resources.locked.Save(hiddenImgPath, System.Drawing.Imaging.ImageFormat.Png);
 
             this.BackColor = Color.FromArgb(80, 84, 82);
             this.ForeColor = Color.White;
@@ -62,7 +64,7 @@ namespace SteamAchievmentViewer
         private void Form1_Load(object sender, EventArgs e)
         {
             if (steamClient != null)
-            {
+            {   
                 steamClient.fetchSteamGames();
                 gamesListbox.Items.Clear();
                 List<SteamGame> gameList = steamClient.getGames().OrderBy(g => g.gameName).ToList();

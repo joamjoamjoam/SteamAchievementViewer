@@ -25,3 +25,23 @@ Just another Steam Achievement Viewer that supports custom grouping of acheivemn
 }
 
 ```
+
+# Toggling Steam Achievment Viewer from Legion GO/ROG Ally
+1. Install Auto Hot Key
+2. Replace the placeholder "YourPathToSteamAchievmentViewer.exe" in config/Show-Hide Acheivement Viewer.ahk
+3. Run config/Show-Hide Acheivement Viewer.ahk by double-clicking it.
+4. Map a Button to F9 (or change the script to whatever key you want)
+5. Pressing Button/F9 will show and hide the Steam Acheivement viewer app.
+6. Optionally The auto hotkey script can be run at boot. 
+
+### Running AHK Script on Boot
+[Lenovo Source](https://www.lenovo.com/us/en/glossary/autohotkey/?orgRef=https%253A%252F%252Fwww.google.com%252F)
+
+```
+How can I run an AutoHotkey script at Windows startup?
+
+To run an AutoHotkey script at Windows startup, you can place a shortcut to the script in the Windows startup folder.
+First, locate the script file on your computer. Then, press Win+R to open the run dialog, type "shell:startup" (without quotes) and click oK.
+This will open the Startup folder. Finally, create a shortcut to your script file and place it in the startup folder.
+The script will now automatically run every time you start your computer.
+```
