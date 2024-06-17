@@ -64,7 +64,7 @@ namespace SteamAchievmentViewer
         private void Form1_Load(object sender, EventArgs e)
         {
             if (steamClient != null)
-            {   
+            {
                 steamClient.fetchSteamGames();
                 gamesListbox.Items.Clear();
                 List<SteamGame> gameList = steamClient.getGames().OrderBy(g => g.gameName).ToList();
@@ -80,6 +80,7 @@ namespace SteamAchievmentViewer
             if (selectedGame != null && steamClient != null)
             {
                 steamClient.saveHTMLForGame(selectedGame.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked);
+                offlineModeCB.Checked = !steamClient.isOnline;
                 achWebView.Source = new Uri(introPath);
                 achWebView.Source = new Uri(htmlPath);
             }
@@ -90,6 +91,7 @@ namespace SteamAchievmentViewer
             SteamGame g = (SteamGame)((ListBox)sender).SelectedItem;
             selectedGame = g;
             reloadFrame();
+
         }
 
         private void sortByComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -100,6 +102,11 @@ namespace SteamAchievmentViewer
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             reloadFrame();
+        }
+
+        private void offlineModeCB_CheckedChanged(object sender, EventArgs e)
+        {
+            steamClient.isOnline = !((CheckBox)sender).Checked;
         }
     }
 }

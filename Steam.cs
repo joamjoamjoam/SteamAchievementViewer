@@ -18,6 +18,7 @@ namespace SteamAchievmentViewer
         private ulong acctID = 0;
         public readonly String webKey = "";
         private String cacheRootPath = "";
+        public Boolean isOnline = true;
         private Dictionary<ulong, String> appList = new Dictionary<ulong, string>();
         private List<SteamGame> games = new List<SteamGame>();
 
@@ -49,14 +50,24 @@ namespace SteamAchievmentViewer
             //{
             //    stream.Write(data, 0, data.Length);
             //}
-
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-            if (response.StatusCode == HttpStatusCode.OK)
+            if (isOnline)
             {
-                String responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-                rv = JObject.Parse(responseString);
+                try
+                {
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    isOnline = true;
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        String responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                        rv = JObject.Parse(responseString);
+                    }
+                }
+                catch
+                {
+                    isOnline = false;
+                }
             }
+
             return rv;
         }
 
@@ -64,12 +75,25 @@ namespace SteamAchievmentViewer
         {
             JObject? appListObj = sendHTTPRequest($"http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key={webKey}&format=json");
 
+            if (appListObj == null)
+            {
+                if (File.Exists(cacheRootPath + "\\appListCache.json"))
+                {
+                    appListObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\appListCache.json"));
+                }
+            }
+            else
+            {
+                File.WriteAllText(cacheRootPath + "\\appListCache.json", appListObj.ToString());
+            }
+
             try
             {
                 foreach ( JObject entry in appListObj["applist"]["apps"])
                 {
                     appList[(ulong)entry["appid"]] = (String) entry["name"];
                 }
+                
             }
             catch (Exception ex)
             {
@@ -77,26 +101,25 @@ namespace SteamAchievmentViewer
             }
         }
 
-        public void updateAchievmentStatusForAppID(SteamGame game, ulong appid, bool invalidateCache=true)
+        public void updateAchievmentStatusForAppID(SteamGame game, ulong appid)
         {
             String userAchievmentsCachePath = $"{cacheRootPath}\\{appid}UserAch.json";
 
             JObject? userAchObj = null;
 
-            if (File.Exists(userAchievmentsCachePath) && !invalidateCache)
+            userAchObj = sendHTTPRequest($"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={webKey}&steamid={acctID}&appid={appid}");
+            if (userAchObj != null)
             {
-                userAchObj = JObject.Parse(File.ReadAllText(userAchievmentsCachePath));
+                File.WriteAllText(userAchievmentsCachePath, userAchObj.ToString());
             }
             else
             {
-                userAchObj = sendHTTPRequest($"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={webKey}&steamid={acctID}&appid={appid}");
-                if (userAchObj != null)
+                if (userAchObj == null)
                 {
-                    File.WriteAllText(userAchievmentsCachePath, userAchObj.ToString());
-                }
-                else
-                {
-                    throw new Exception($"Error Fetching appdetails for {appid} - Steam return a failure");
+                    if (File.Exists(userAchievmentsCachePath))
+                    {
+                        userAchObj = JObject.Parse(File.ReadAllText(userAchievmentsCachePath));
+                    }
                 }
             }
 
@@ -104,6 +127,10 @@ namespace SteamAchievmentViewer
             if (userAchObj != null)
             {
                 game.updateAchievmentsStatus(userAchObj);
+            }
+            else
+            {
+                throw new Exception($"Error Fetching appdetails for {appid} - Steam return a failure and no cache");
             }
         }
 
@@ -117,6 +144,19 @@ namespace SteamAchievmentViewer
             games.Clear();
 
             JObject? gameIDObj = sendHTTPRequest($"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={webKey}&steamid={acctID}&include_played_free_games=true&include_extended_appinfo=true");
+
+            if (gameIDObj == null)
+            {
+                if (File.Exists(cacheRootPath + "\\gamesList.json"))
+                {
+                    gameIDObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\gamesList.json"));
+                }
+            }
+            else
+            {
+                File.WriteAllText(cacheRootPath + "\\gamesList.json", gameIDObj.ToString());
+            }
+
 
             if (gameIDObj != null)
             {
@@ -134,6 +174,10 @@ namespace SteamAchievmentViewer
                     }
                 }
             }
+            else
+            {
+                throw new Exception($"Error Fetching appdetails - Steam return a failure");
+            }
         }
 
         public List<SteamGame> getGames()
@@ -148,6 +192,7 @@ namespace SteamAchievmentViewer
         public Boolean saveHTMLForGame(ulong id, String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, Boolean showHidden = false)
         {
             Boolean rv = false;
+            Boolean offlineButNoData = false;
             SteamGame g = games.Where(g => g.id == id).FirstOrDefault();
             if (g != null)
             {
@@ -155,14 +200,31 @@ namespace SteamAchievmentViewer
 
                 JObject? achDataObj = null;
                 achDataObj = sendHTTPRequest($"https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key={webKey}&appid={id}");
+
+                if (achDataObj == null)
+                {
+                    if (File.Exists(cacheRootPath + $"\\{id}Ach.json"))
+                    {
+                        achDataObj = JObject.Parse(File.ReadAllText(cacheRootPath + $"\\{id}Ach.json"));
+                    }
+                    else
+                    {
+                        offlineButNoData = true;
+                    }
+                }
+                else
+                {
+                    File.WriteAllText(cacheRootPath + $"\\{id}Ach.json", achDataObj.ToString());
+                }
+
                 try
                 {
                     if (achDataObj[$"game"]["availableGameStats"]["achievements"] != null)
                     {
                         //File.WriteAllText(gameAchievmentsCachePath, achDataObj.ToString());
                         gameCopy.loadAchievmentsModel((JArray)achDataObj[$"game"]["availableGameStats"]["achievements"]);
-                        updateAchievmentStatusForAppID(gameCopy,id, invalidateCache: true);
-                        gameCopy.saveHTMLTo(path, sortOrder: sortOrder, showHidden: showHidden);
+                        updateAchievmentStatusForAppID(gameCopy,id);
+                        gameCopy.saveHTMLTo(path, sortOrder: sortOrder, showHidden: showHidden, showOfflineHeader: !isOnline);
                         rv  = true;
                     }
                     else
@@ -173,9 +235,18 @@ namespace SteamAchievmentViewer
                 catch
                 {
                     // Its ok to fail some games have 0 achievments
+                    offlineButNoData = true;
+                    File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Nothing to See Here</h1><h3>{((appList.Keys.Contains(id)) ? $"{appList[id]}" : $"App ID {id}")} has no achievements</h3></body>");
                 }
             }
-            
+
+            if (offlineButNoData && !isOnline)
+            {
+                // Load A Missing Data HTML
+                File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Offline Mode</h1><h3>No Cached Data for {((appList.Keys.Contains(id)) ? $"{appList[id]}" : $"App ID {id}" )}</h3></body>");
+
+            }
+
             return rv;
         }
     }
@@ -270,7 +341,7 @@ namespace SteamAchievmentViewer
             return rv;
         }
 
-        public bool saveHTMLTo(String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, bool showHidden = false)
+        public bool saveHTMLTo(String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, bool showHidden = false, Boolean showOfflineHeader = false)
         {
             bool rv = false;
             List<String> htmlFile = new List<String>();
@@ -287,6 +358,7 @@ namespace SteamAchievmentViewer
             css.Add(".achDescription {font-size: 20px; text-align: left}");
             css.Add(".achUnlocked {font-size: 15px; text-align: left}");
             css.Add(".dividerHeader {font-size: 25px;}");
+            css.Add(".offlineHeader {font-size: 15px; color: rgba(218, 227, 108, 1);}");
             css.Add(".gameHeader {font-size 30px;}");
             css.Add("body {background-color: rgba(120, 120, 120, 1); color: #eee;}");
 
@@ -300,6 +372,11 @@ namespace SteamAchievmentViewer
 
             html.Add($"<h1 id=\"{gameName}Header\">{gameName} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements</h1>");
             // Add Controls
+            if (showOfflineHeader)
+            {
+                html.Add("<h2 class=\"offlineHeader\">Offline Mode Enabled (Error Contacting Steam)</h2>");
+            }
+           
             if (achievements.Keys.Count > 1)
             {
                 html.Add($"<table><tr><td><input type='button' value='Collapse All' onclick=\"collapseAll(true)\"></td><td><input type='button' value='Expand All' onclick=\"collapseAll(false)\"></td></tr></table>");
