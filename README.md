@@ -8,6 +8,10 @@ Just another Steam Achievement Viewer that supports custom grouping of acheivemn
 ### Achievemnts View
 ![image info](/images/Achievements.png)
 
+## Offline Mode
+
+Offline Mode will show Achievments for any games you have previously viewed including your earned achievments. You must visit each game at least once before its available offline (Thanks Stea Rate Limiting)
+
 ## Adding a new Mapping for a Steam Game
 1. Create a file name {appid}.json in the achievementMaps folder where {appid} is the app id that matches your Steam Game
 2. Create a Field with the Name of the Section you wish to create for a set of Achievements and set the value of that field to the set of achievement IDs you wish to group.
