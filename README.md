@@ -49,3 +49,9 @@ First, locate the script file on your computer. Then, press Win+R to open the ru
 This will open the Startup folder. Finally, create a shortcut to your script file and place it in the startup folder.
 The script will now automatically run every time you start your computer.
 ```
+
+## TODO
+
+- Pull Achievement Models in background so Offline mode works without needing to visit the game first
+- Add Mechanism to create Achievement groups in-app
+- Add Mechanism to pull in Community-Made Achievement maps from github from inside the app.
