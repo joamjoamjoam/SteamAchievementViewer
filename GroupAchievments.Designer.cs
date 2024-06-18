@@ -42,6 +42,7 @@
             // 
             // unmappedListBox
             // 
+            unmappedListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             unmappedListBox.CheckOnClick = true;
             unmappedListBox.FormattingEnabled = true;
             unmappedListBox.Location = new Point(12, 97);
@@ -51,6 +52,7 @@
             // 
             // mappedTreeView
             // 
+            mappedTreeView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             mappedTreeView.CheckBoxes = true;
             mappedTreeView.Location = new Point(381, 97);
             mappedTreeView.Name = "mappedTreeView";
@@ -79,6 +81,7 @@
             // 
             // deleteBtn
             // 
+            deleteBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             deleteBtn.Location = new Point(733, 64);
             deleteBtn.Name = "deleteBtn";
             deleteBtn.Size = new Size(237, 25);
@@ -99,6 +102,7 @@
             // 
             // label2
             // 
+            label2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
             label2.Location = new Point(557, 5);
@@ -109,6 +113,7 @@
             // 
             // saveAchievementBtn
             // 
+            saveAchievementBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             saveAchievementBtn.Location = new Point(575, 64);
             saveAchievementBtn.Name = "saveAchievementBtn";
             saveAchievementBtn.Size = new Size(153, 25);
@@ -152,6 +157,7 @@
             Controls.Add(addBtn);
             Controls.Add(mappedTreeView);
             Controls.Add(unmappedListBox);
+            MinimumSize = new Size(900, 500);
             Name = "GroupAchievments";
             Text = "GroupAchievments";
             Shown += GroupAchievments_Shown;

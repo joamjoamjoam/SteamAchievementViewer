@@ -28,6 +28,12 @@ namespace SteamAchievmentViewer
             this.appid = appid;
             mapPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + $"\\achievementMaps\\{appid}.json";
 
+            if (steamClient != null)
+            {
+                this.Text = $"Acheivement Map Creator - {steamClient.getAppName(appid)}";
+            }
+            
+
             this.BackColor = Color.FromArgb(80, 84, 82);
             this.ForeColor = Color.White;
 
