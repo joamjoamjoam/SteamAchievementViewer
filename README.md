@@ -2,7 +2,7 @@
 
 Just another Steam Achievement Viewer that supports custom grouping of acheivemnts. Some uses are game collection that group multiplegames acheivments together or seperating DLC achievments from the base game
 
-### Groups for Kingdom Hearts 1.5 Collection.
+### Groups for Kingdom Hearts 1.5 Collection
 ![image info](/images/Categories.png)
 
 ### Achievements View
