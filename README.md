@@ -16,13 +16,13 @@ Offline Mode will show Achievments for any games you have previously viewed incl
 Achievement Maps can be created in-app using the achievement map creator.
 1. Select the game that has the achievements you want to map
 2. Click the "Group Achievements" Button
-3. Select the achievements to add to a group on the left side panel. (Note: All Achievements must be mapped to a group to save the achievement map)
-4. Enter the Name for the Achievement group and click the "Add Mapping" button
+3. Select the achievements to add to a group on the left side panel. (Note: All achievements must be mapped to a group to save the achievement map)
+4. Enter the name for the achievement group and click the "Add Mapping" button
 5. The new group will be added to the right side panel.
-6. To remap a group of achievemnts or an achievement select it on the right side panel and click the "Delete Category/Achievement mapping" button. THe achievements will go back to the unmapped side panel.
+6. To remap a group of achievemnts or an achievement select it on the right side panel and click the "Delete Category/Achievement mapping" button. The achievements will go back to the unmapped side panel.
 7. Once all (or none if you wish to delete the map) of the achievements are mapped click the "Save Achievement Map" button and the main achievement viewer page will refresh accepting the new changes.
 
-[Map Creator Tool](/images/AchievementMapCreator.png)
+![Map Creator Tool](/images/AchievementMapCreator.png)
 
 
 ## Adding a new Mapping for a Steam Game (Manual)
