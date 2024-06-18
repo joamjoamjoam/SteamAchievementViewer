@@ -53,6 +53,6 @@ The script will now automatically run every time you start your computer.
 ## TODO
 
 - Pull Achievement Models in background so Offline Mode works without needing to visit the game first
-x Add Mechanism to create Achievement groups in-app
-x Add Mechanism to pull in Community-Made Achievement maps from github from inside the app.
+- (Done) Add Mechanism to create Achievement groups in-app
+- (Done) Add Mechanism to pull in Community-Made Achievement maps from github from inside the app.
 - RetroAchievements maybe??
