@@ -417,7 +417,7 @@ namespace SteamAchievmentViewer
             javascript.Add("function updateHeaderIconMinus(elem) { elem.innerHTML = elem.innerHTML.replace(/^[\\-+]/, \"-\"); }");
             javascript.Add("function updateHeaderIconPlus(elem) { elem.innerHTML = elem.innerHTML.replace(/^[\\-+]/, \"+\"); }");
             javascript.Add("function collapseAll(collapse) { if (collapse) { document.querySelectorAll('.dividerDiv').forEach(collapseFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconPlus);} else { document.querySelectorAll('.dividerDiv').forEach(expandFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconMinus);}}");
-
+            javascript.Add("function reloadFrame() {window.chrome.webview.postMessage('reload');}");
 
             html.Add($"<h1 id=\"{gameName}Header\">{gameName} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements</h1>");
             // Add Controls
@@ -425,11 +425,15 @@ namespace SteamAchievmentViewer
             {
                 html.Add("<h2 class=\"offlineHeader\">Offline Mode Enabled (Error Contacting Steam)</h2>");
             }
-           
+
+            String buttonHTML = $"<table><tr>";
             if (achievements.Keys.Count > 1)
             {
-                html.Add($"<table><tr><td><input type='button' value='Collapse All' onclick=\"collapseAll(true)\"></td><td><input type='button' value='Expand All' onclick=\"collapseAll(false)\"></td></tr></table>");
+                buttonHTML += "<td><input type='button' value='Collapse All' onclick=\"collapseAll(true)\"></td><td><input type='button' value='Expand All' onclick=\"collapseAll(false)\"></td>";
             }
+            buttonHTML += "<td><input type='button' value='Refresh' onclick=\"reloadFrame()\"></td>";
+            buttonHTML += "</tr></table>";
+            html.Add(buttonHTML);
             html.Add($"<div id=\"{gameName}Div\" class=\"gameHeader\">");
 
             foreach (String key in achievements.Keys)

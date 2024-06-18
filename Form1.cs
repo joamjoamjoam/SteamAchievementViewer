@@ -1,4 +1,6 @@
 using LibGit2Sharp;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
@@ -23,6 +25,7 @@ namespace SteamAchievmentViewer
         public Form1()
         {
             InitializeComponent();
+            InitializeAsync();
 
             try
             {
@@ -70,6 +73,22 @@ namespace SteamAchievmentViewer
             updateMapsBtn.BackColor = Color.FromArgb(120, 120, 120);
             updateMapsBtn.ForeColor = Color.White;
 
+        }
+
+        async void InitializeAsync()
+        {
+            await achWebView.EnsureCoreWebView2Async(null);
+            achWebView.CoreWebView2.WebMessageReceived += MessageReceived;
+        }
+
+        void MessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            String content = args.TryGetWebMessageAsString();
+            if (content == "reload")
+            {
+                reloadFrame();
+            }
+            
         }
 
         private void Form1_Load(object sender, EventArgs e)

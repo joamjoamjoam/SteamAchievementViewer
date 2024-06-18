@@ -12,7 +12,20 @@ Just another Steam Achievement Viewer that supports custom grouping of acheivemn
 
 Offline Mode will show Achievments for any games you have previously viewed including your earned achievments. You must visit each game at least once before its available offline (Thanks Stea Rate Limiting)
 
-## Adding a new Mapping for a Steam Game
+## Achievment Map Creator
+Achievement Maps can be created in-app using the achievement map creator.
+1. Select the game that has the achievements you want to map
+2. Click the "Group Achievements" Button
+3. Select the achievements to add to a group on the left side panel. (Note: All Achievements must be mapped to a group to save the achievement map)
+4. Enter the Name for the Achievement group and click the "Add Mapping" button
+5. The new group will be added to the right side panel.
+6. To remap a group of achievemnts or an achievement select it on the right side panel and click the "Delete Category/Achievement mapping" button. THe achievements will go back to the unmapped side panel.
+7. Once all (or none if you wish to delete the map) of the achievements are mapped click the "Save Achievement Map" button and the main achievement viewer page will refresh accepting the new changes.
+
+[Map Creator Tool](/images/AchievementMapCreator.png)
+
+
+## Adding a new Mapping for a Steam Game (Manual)
 1. Create a file name {appid}.json in the achievementMaps folder where {appid} is the app id that matches your Steam Game
 2. Create a Field with the Name of the Section you wish to create for a set of Achievements and set the value of that field to the set of achievement IDs you wish to group.
 3. Steam Achievement IDs can be queried using the Steam API. (https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/). I suggest using [this website](https://steamapi.xpaw.me/#) to run the API queries.
