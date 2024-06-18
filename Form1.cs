@@ -1,6 +1,10 @@
+using LibGit2Sharp;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
+using System.Security.Policy;
 
 namespace SteamAchievmentViewer
 {
@@ -34,6 +38,7 @@ namespace SteamAchievmentViewer
                 {
                     steamClient = new Steam(steamAcctId, steamWebKey);
                 }
+                groupAchievmentsBtn.Visible = false;
             }
             catch
             {
@@ -56,8 +61,14 @@ namespace SteamAchievmentViewer
             gamesListbox.BackColor = Color.FromArgb(120, 120, 120);
             gamesListbox.ForeColor = Color.White;
 
+            groupAchievmentsBtn.BackColor = Color.FromArgb(120, 120, 120);
+            groupAchievmentsBtn.ForeColor = Color.White;
+
             sortByComboBox.BackColor = Color.FromArgb(120, 120, 120);
             sortByComboBox.ForeColor = Color.White;
+
+            updateMapsBtn.BackColor = Color.FromArgb(120, 120, 120);
+            updateMapsBtn.ForeColor = Color.White;
 
         }
 
@@ -91,7 +102,7 @@ namespace SteamAchievmentViewer
             SteamGame g = (SteamGame)((ListBox)sender).SelectedItem;
             selectedGame = g;
             reloadFrame();
-
+            groupAchievmentsBtn.Visible = true;
         }
 
         private void sortByComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -107,6 +118,99 @@ namespace SteamAchievmentViewer
         private void offlineModeCB_CheckedChanged(object sender, EventArgs e)
         {
             steamClient.isOnline = !((CheckBox)sender).Checked;
+        }
+
+        private void groupAchievmentsBtn_Click(object sender, EventArgs e)
+        {
+            if (selectedGame != null)
+            {
+                GroupAchievments tmpForm = new GroupAchievments(steamClient, selectedGame.id);
+                tmpForm.ShowDialog();
+                reloadFrame();
+            }
+        }
+
+        private Boolean downloadGitRepo(string path)
+        {
+            Boolean rv = false;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://github.com/joamjoamjoam/SteamAchievementViewer/archive/main.zip");
+
+            request.Method = "GET";
+            String tmpZipPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"gitPull.zip";
+
+            try
+            {
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    if (File.Exists(tmpZipPath))
+                    {
+                        File.Delete(tmpZipPath);
+                    }
+
+                    MemoryStream memoryStream = new MemoryStream();
+                    response.GetResponseStream().CopyTo(memoryStream);
+                    byte[] responseArr = memoryStream.ToArray();
+
+                    File.WriteAllBytes(tmpZipPath, responseArr);
+                    System.IO.Compression.ZipFile.ExtractToDirectory(tmpZipPath, path);
+                    
+                    rv = true;
+                    if (File.Exists(tmpZipPath))
+                    {
+                        File.Delete(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"gitPull.zip");
+                    }
+                }
+            }
+            catch
+            {
+                try
+                {
+                    if (File.Exists(tmpZipPath)) { 
+                        File.Delete(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"gitPull.zip");
+                    }
+                }
+                catch
+                {
+
+                }
+                rv = false;
+            }
+            
+
+            return rv;
+        }
+
+        private void updateMapsBtn_Click(object sender, EventArgs e)
+        {
+            String clonePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\\steamachievementviewer";
+            String cloneMapsPath = clonePath + @"\\SteamAchievementViewer-main\\achievementMaps";
+            if (Directory.Exists(clonePath))
+            {
+                Directory.Delete(clonePath, true);
+            }
+            try
+            {
+                downloadGitRepo(clonePath);
+                if (Directory.Exists(cloneMapsPath))
+                {
+                    foreach (string fileName in Directory.GetFiles(cloneMapsPath, "*.json"))
+                    {
+                        File.Copy(fileName, Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\achievementMaps\\" + Path.GetFileName(fileName), true);
+                    }
+                    MessageBox.Show("Achievement Maps Updated Successfully");
+                    Directory.Delete(clonePath, true);
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Error updating Achievement Maps from Git Repository:\nhttps://github.com/joamjoamjoam/SteamAchievementViewer");
+            }
+
         }
     }
 }

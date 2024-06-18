@@ -189,6 +189,50 @@ namespace SteamAchievmentViewer
             return games.Where(g => g.id == id).FirstOrDefault();
         }
 
+
+        public Dictionary<String, List<SteamAchievment>> getAchievmentsForApp(ulong id)
+        {
+            Dictionary<String, List<SteamAchievment>> rv = new Dictionary<String, List<SteamAchievment>>();
+
+            SteamGame g = games.Where(g => g.id == id).FirstOrDefault();
+            if (g != null)
+            {
+                SteamGame gameCopy = new SteamGame(g.gameName, id);
+
+                JObject? achDataObj = null;
+                achDataObj = sendHTTPRequest($"https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key={webKey}&appid={id}");
+
+                if (achDataObj == null)
+                {
+                    if (File.Exists(cacheRootPath + $"\\{id}Ach.json"))
+                    {
+                        achDataObj = JObject.Parse(File.ReadAllText(cacheRootPath + $"\\{id}Ach.json"));
+                    }
+                }
+                else
+                {
+                    File.WriteAllText(cacheRootPath + $"\\{id}Ach.json", achDataObj.ToString());
+                }
+
+                try
+                {
+                    if (achDataObj[$"game"]["availableGameStats"]["achievements"] != null)
+                    {
+                        //File.WriteAllText(gameAchievmentsCachePath, achDataObj.ToString());
+                        gameCopy.loadAchievmentsModel((JArray)achDataObj[$"game"]["availableGameStats"]["achievements"]);
+                        rv = gameCopy.GetAchievments();
+
+                    }
+                }
+                catch
+                {
+
+                }
+            }
+
+            return rv;
+        }
+
         public Boolean saveHTMLForGame(ulong id, String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, Boolean showHidden = false)
         {
             Boolean rv = false;
@@ -236,18 +280,23 @@ namespace SteamAchievmentViewer
                 {
                     // Its ok to fail some games have 0 achievments
                     offlineButNoData = true;
-                    File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Nothing to See Here</h1><h3>{((appList.Keys.Contains(id)) ? $"{appList[id]}" : $"App ID {id}")} has no achievements</h3></body>");
+                    File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Nothing to See Here</h1><h3>{getAppName(id)} has no achievements</h3></body>");
                 }
             }
 
             if (offlineButNoData && !isOnline)
             {
                 // Load A Missing Data HTML
-                File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Offline Mode</h1><h3>No Cached Data for {((appList.Keys.Contains(id)) ? $"{appList[id]}" : $"App ID {id}" )}</h3></body>");
+                File.WriteAllText(path, $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Offline Mode</h1><h3>No Cached Data for {getAppName(id)}</h3></body>");
 
             }
 
             return rv;
+        }
+
+        public String getAppName(ulong id)
+        {
+            return ((appList.Keys.Contains(id)) ? $"{appList[id]}" : $"App ID {id}");
         }
     }
 
@@ -626,7 +675,7 @@ namespace SteamAchievmentViewer
         }
         public override string ToString()
         {
-            return $"Achievement: {displayName} - {((unlocked) ? "Unlocked" : "Locked")}";
+            return $"{qualifiedName}-{displayName}";
         }
     }
 }

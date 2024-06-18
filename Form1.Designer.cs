@@ -36,6 +36,8 @@
             label3 = new Label();
             checkBox1 = new CheckBox();
             offlineModeCB = new CheckBox();
+            groupAchievmentsBtn = new Button();
+            updateMapsBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)achWebView).BeginInit();
             SuspendLayout();
             // 
@@ -68,7 +70,7 @@
             sortByComboBox.FlatStyle = FlatStyle.Flat;
             sortByComboBox.FormattingEnabled = true;
             sortByComboBox.Items.AddRange(new object[] { "Game Order", "Name A-Z", "Name Z-A", "Unlocked First", "Locked First" });
-            sortByComboBox.Location = new Point(909, 12);
+            sortByComboBox.Location = new Point(943, 12);
             sortByComboBox.Name = "sortByComboBox";
             sortByComboBox.Size = new Size(210, 23);
             sortByComboBox.TabIndex = 4;
@@ -77,7 +79,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(856, 15);
+            label1.Location = new Point(890, 15);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 5;
@@ -97,7 +99,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label3.Location = new Point(507, 12);
+            label3.Location = new Point(338, 12);
             label3.Name = "label3";
             label3.Size = new Size(134, 25);
             label3.TabIndex = 8;
@@ -106,7 +108,7 @@
             // checkBox1
             // 
             checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(753, 3);
+            checkBox1.Location = new Point(787, 3);
             checkBox1.Name = "checkBox1";
             checkBox1.Size = new Size(97, 19);
             checkBox1.TabIndex = 9;
@@ -117,7 +119,7 @@
             // offlineModeCB
             // 
             offlineModeCB.AutoSize = true;
-            offlineModeCB.Location = new Point(753, 26);
+            offlineModeCB.Location = new Point(787, 26);
             offlineModeCB.Name = "offlineModeCB";
             offlineModeCB.Size = new Size(96, 19);
             offlineModeCB.TabIndex = 10;
@@ -125,11 +127,33 @@
             offlineModeCB.UseVisualStyleBackColor = true;
             offlineModeCB.CheckedChanged += offlineModeCB_CheckedChanged;
             // 
+            // groupAchievmentsBtn
+            // 
+            groupAchievmentsBtn.Location = new Point(533, 3);
+            groupAchievmentsBtn.Name = "groupAchievmentsBtn";
+            groupAchievmentsBtn.Size = new Size(121, 38);
+            groupAchievmentsBtn.TabIndex = 11;
+            groupAchievmentsBtn.Text = "Group Achievements";
+            groupAchievmentsBtn.UseVisualStyleBackColor = true;
+            groupAchievmentsBtn.Click += groupAchievmentsBtn_Click;
+            // 
+            // updateMapsBtn
+            // 
+            updateMapsBtn.Location = new Point(660, 3);
+            updateMapsBtn.Name = "updateMapsBtn";
+            updateMapsBtn.Size = new Size(121, 38);
+            updateMapsBtn.TabIndex = 12;
+            updateMapsBtn.Text = "Update Achievement Maps";
+            updateMapsBtn.UseVisualStyleBackColor = true;
+            updateMapsBtn.Click += updateMapsBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1173, 503);
+            Controls.Add(updateMapsBtn);
+            Controls.Add(groupAchievmentsBtn);
             Controls.Add(offlineModeCB);
             Controls.Add(checkBox1);
             Controls.Add(label3);
@@ -155,5 +179,7 @@
         private Label label3;
         private CheckBox checkBox1;
         private CheckBox offlineModeCB;
+        private Button groupAchievmentsBtn;
+        private Button updateMapsBtn;
     }
 }
