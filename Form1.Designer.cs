@@ -69,7 +69,7 @@
             sortByComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             sortByComboBox.FlatStyle = FlatStyle.Flat;
             sortByComboBox.FormattingEnabled = true;
-            sortByComboBox.Items.AddRange(new object[] { "Game Order", "Name A-Z", "Name Z-A", "Unlocked First", "Locked First" });
+            sortByComboBox.Items.AddRange(new object[] { "Game Order", "Name A-Z", "Name Z-A", "Unlocked First A-Z", "Locked First A-Z", "Unlocked First Game Order", "Locked First Game Order" });
             sortByComboBox.Location = new Point(943, 12);
             sortByComboBox.Name = "sortByComboBox";
             sortByComboBox.Size = new Size(210, 23);

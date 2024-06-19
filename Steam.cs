@@ -33,7 +33,7 @@ namespace SteamAchievmentViewer
             }
         }
 
-        public JObject? sendHTTPRequest(String url, String method="GET")
+        public JObject? sendHTTPRequest(String url, String method = "GET")
         {
             JObject rv = null;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -89,11 +89,11 @@ namespace SteamAchievmentViewer
 
             try
             {
-                foreach ( JObject entry in appListObj["applist"]["apps"])
+                foreach (JObject entry in appListObj["applist"]["apps"])
                 {
-                    appList[(ulong)entry["appid"]] = (String) entry["name"];
+                    appList[(ulong)entry["appid"]] = (String)entry["name"];
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -136,7 +136,7 @@ namespace SteamAchievmentViewer
 
         public void fetchSteamGames()
         {
- 
+
             if (appList.Count == 0)
             {
                 getAppList();
@@ -233,7 +233,7 @@ namespace SteamAchievmentViewer
             return rv;
         }
 
-        public Boolean saveHTMLForGame(ulong id, String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, Boolean showHidden = false)
+        public Boolean saveHTMLForGame(ulong id, String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, Boolean showHidden = false, JObject divStates = null)
         {
             Boolean rv = false;
             Boolean offlineButNoData = false;
@@ -268,7 +268,7 @@ namespace SteamAchievmentViewer
                         //File.WriteAllText(gameAchievmentsCachePath, achDataObj.ToString());
                         gameCopy.loadAchievmentsModel((JArray)achDataObj[$"game"]["availableGameStats"]["achievements"]);
                         updateAchievmentStatusForAppID(gameCopy,id);
-                        gameCopy.saveHTMLTo(path, sortOrder: sortOrder, showHidden: showHidden, showOfflineHeader: !isOnline);
+                        gameCopy.saveHTMLTo(path, sortOrder: sortOrder, showHidden: showHidden, showOfflineHeader: !isOnline, divStates: divStates);
                         rv  = true;
                     }
                     else
@@ -367,6 +367,12 @@ namespace SteamAchievmentViewer
                 List<SteamAchievment> steamAchievmentsLocked = achievements[key].Where(c => !c.getUnlockStatus()).OrderBy(c => c.displayName).ToList();
                 steamAchievmentsUnlocked.AddRange(achievements[key].Where(c => !c.getUnlockStatus()).OrderBy(c => c.displayName));
                 steamAchievmentsLocked.AddRange(achievements[key].Where(c => c.getUnlockStatus()).OrderBy(c => c.displayName));
+
+                List<SteamAchievment> steamAchievmentsUnlockedGameOrder = achievements[key].Where(c => c.getUnlockStatus()).ToList();
+                List<SteamAchievment> steamAchievmentsLockedGameOrder = achievements[key].Where(c => !c.getUnlockStatus()).ToList();
+                steamAchievmentsUnlockedGameOrder.AddRange(achievements[key].Where(c => !c.getUnlockStatus()));
+                steamAchievmentsLockedGameOrder.AddRange(achievements[key].Where(c => c.getUnlockStatus()));
+
                 switch (sortOrder)
                 {
                     case AchievementSortOrder.ABSOLUTE:
@@ -384,13 +390,24 @@ namespace SteamAchievmentViewer
                     case AchievementSortOrder.LOCKED:
                         rv.Add(key, steamAchievmentsLocked);
                         break;
+                    case AchievementSortOrder.UNLOCKEDGAME:
+                        rv.Add(key, steamAchievmentsUnlockedGameOrder);
+                        break;
+                    case AchievementSortOrder.LOCKEDGAME:
+                        rv.Add(key, steamAchievmentsLockedGameOrder);
+                        break;
                 }
             }
 
             return rv;
         }
 
-        public bool saveHTMLTo(String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, bool showHidden = false, Boolean showOfflineHeader = false)
+        private Boolean isCollapsed(JObject divStates, String headerName)
+        {
+            return !(divStates == null || (divStates != null && !divStates.ContainsKey($"{id}-{headerName}")) || (divStates != null && divStates.ContainsKey($"{id}-{headerName}") && divStates[$"{id}-{headerName}"].Value<String>() == "expanded"));
+        }
+
+        public bool saveHTMLTo(String path, AchievementSortOrder sortOrder = AchievementSortOrder.ABSOLUTE, bool showHidden = false, Boolean showOfflineHeader = false, JObject divStates = null)
         {
             bool rv = false;
             List<String> htmlFile = new List<String>();
@@ -411,13 +428,16 @@ namespace SteamAchievmentViewer
             css.Add(".gameHeader {font-size 30px;}");
             css.Add("body {background-color: rgba(120, 120, 120, 1); color: #eee;}");
 
-            javascript.Add("function togglediv(id, headerId) { var e = document.getElementById(id); var headerElem = document.getElementById(headerId); if (headerElem.innerHTML[0] == '+') {headerElem.innerHTML = headerElem.innerHTML.replace(/^\\+/, \"-\")} else { headerElem.innerHTML = headerElem.innerHTML.replace(/^\\-/, \"+\") }; if ( e.style.display !== 'none' ) { e.style.display = 'none'; } else { e.style.display = ''; } }");
-            javascript.Add("function collapseFunc(elem) { elem.style.display = \"none\"; }");
-            javascript.Add("function expandFunc(elem) { elem.style.display = \"block\"; }");
+            javascript.Add("function togglediv(id, headerId) { var e = document.getElementById(id); var headerElem = document.getElementById(headerId); if (headerElem.innerHTML[0] == '+') {headerElem.innerHTML = headerElem.innerHTML.replace(/^\\+/, \"-\")} else { headerElem.innerHTML = headerElem.innerHTML.replace(/^\\-/, \"+\") }; if ( e.style.display !== 'none' ) { e.style.display = 'none';  sendCollapsedEvent(headerId); } else { e.style.display = ''; sendExpandEvent(headerId);} }");
+            javascript.Add("function collapseFunc(elem) { elem.style.display = \"none\"; sendCollapsedEvent(elem.id);}");
+            javascript.Add("function expandFunc(elem) { elem.style.display = \"block\"; sendExpandEvent(elem.id);}");
             javascript.Add("function updateHeaderIconMinus(elem) { elem.innerHTML = elem.innerHTML.replace(/^[\\-+]/, \"-\"); }");
             javascript.Add("function updateHeaderIconPlus(elem) { elem.innerHTML = elem.innerHTML.replace(/^[\\-+]/, \"+\"); }");
             javascript.Add("function collapseAll(collapse) { if (collapse) { document.querySelectorAll('.dividerDiv').forEach(collapseFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconPlus);} else { document.querySelectorAll('.dividerDiv').forEach(expandFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconMinus);}}");
             javascript.Add("function reloadFrame() {window.chrome.webview.postMessage('reload');}");
+            javascript.Add("function sendCollapsedEvent(id) {window.chrome.webview.postMessage('collapsed-' + id);}");
+            javascript.Add("function sendExpandEvent(id) {window.chrome.webview.postMessage('expanded-' + id);}");
+
 
             html.Add($"<h1 id=\"{gameName}Header\">{gameName} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements</h1>");
             // Add Controls
@@ -443,8 +463,8 @@ namespace SteamAchievmentViewer
                 {
                     if (achievements.Keys.Count > 1) 
                     {
-                        html.Add($"<h1 id=\"{key}Header\" class=\"dividerHeader\" onclick=\"togglediv('{key}Div', '{key}Header')\">- {key} {achievements[key].Where(a => a.getUnlockStatus()).Count()}/{achievements[key].Count} Acheivements</h1>");
-                        html.Add($"<div id=\"{key}Div\" class=\"dividerDiv\">");
+                        html.Add($"<h1 id=\"{key}Header\" class=\"dividerHeader\" onclick=\"togglediv('{key}Div', '{key}Header')\">{(isCollapsed(divStates, key) ? "+" : "-")} {key} {achievements[key].Where(a => a.getUnlockStatus()).Count()}/{achievements[key].Count} Acheivements</h1>");
+                        html.Add($"<div id=\"{key}Div\" class=\"dividerDiv\" style=\"display: {(isCollapsed(divStates, key) ? "none" : "block")}\">");
                     }
 
                     html.Add($"<table class=\"achRootTable\">");
@@ -616,7 +636,9 @@ namespace SteamAchievmentViewer
         NAMEASC,
         NAMEDESC,
         UNLOCKED,
-        LOCKED
+        LOCKED,
+        UNLOCKEDGAME,
+        LOCKEDGAME,
     }
 
     public class SteamAchievment

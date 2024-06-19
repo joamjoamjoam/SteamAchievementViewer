@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Security.Policy;
+using System.Text.RegularExpressions;
 
 namespace SteamAchievmentViewer
 {
@@ -18,8 +19,10 @@ namespace SteamAchievmentViewer
         public String introPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\intro.html";
         public String hiddenImgPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\locked.png";
         public String configPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\config\\config.json";
+        public String divStatePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\divStates.json";
         private String steamWebKey = "";
         private ulong steamAcctId = 0;
+        private JObject divStateModel;
 
         public Form1()
         {
@@ -45,6 +48,15 @@ namespace SteamAchievmentViewer
             catch
             {
                 MessageBox.Show("Please load your Steam Web Key and Account ID", "Configuration Needed");
+            }
+
+            if (File.Exists(divStatePath))
+            {
+                divStateModel = JObject.Parse(File.ReadAllText(divStatePath));
+            }
+            else
+            {
+                divStateModel = new JObject();
             }
 
 
@@ -83,11 +95,56 @@ namespace SteamAchievmentViewer
         void MessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
             String content = args.TryGetWebMessageAsString();
-            if (content == "reload")
+            try
             {
-                reloadFrame();
+                if (content == "reload")
+                {
+                    reloadFrame();
+                }
+                else if (content.StartsWith("expanded-"))
+                {
+
+                    if (selectedGame != null)
+                    {
+                        String key = $"{selectedGame.id}-{content.Split(new char[] { '-' })[1]}";
+                        key = Regex.Replace(key, "(Header|Div)$", "");
+                        //MessageBox.Show($"{key} was Expanded");
+                        if (divStateModel.ContainsKey(key))
+                        {
+                            divStateModel[key] = "expanded";
+                        }
+                        else
+                        {
+                            divStateModel.Add(key, "expanded");
+                        }
+                        File.WriteAllText(divStatePath, divStateModel.ToString());
+                    }
+                }
+                else if (content.StartsWith("collapsed-"))
+                {
+                    if (selectedGame != null)
+                    {
+                        String key = $"{selectedGame.id}-{content.Split(new char[] { '-' })[1]}";
+                        key = Regex.Replace(key, "(Header|Div)$", "");
+                        //MessageBox.Show($"{key} was Collapsed");
+                        if (divStateModel.ContainsKey(key))
+                        {
+                            divStateModel[key] = "collapsed";
+                        }
+                        else
+                        {
+                            divStateModel.Add(key, "collapsed");
+                        }
+                        File.WriteAllText(divStatePath, divStateModel.ToString());
+                    }
+                }
             }
-            
+            catch (Exception ex)
+            {
+
+            }
+
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -108,7 +165,7 @@ namespace SteamAchievmentViewer
         {
             if (selectedGame != null && steamClient != null)
             {
-                steamClient.saveHTMLForGame(selectedGame.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked);
+                steamClient.saveHTMLForGame(selectedGame.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
                 offlineModeCB.Checked = !steamClient.isOnline;
                 achWebView.Source = new Uri(introPath);
                 achWebView.Source = new Uri(htmlPath);
@@ -172,7 +229,7 @@ namespace SteamAchievmentViewer
 
                     File.WriteAllBytes(tmpZipPath, responseArr);
                     System.IO.Compression.ZipFile.ExtractToDirectory(tmpZipPath, path);
-                    
+
                     rv = true;
                     if (File.Exists(tmpZipPath))
                     {
@@ -184,7 +241,8 @@ namespace SteamAchievmentViewer
             {
                 try
                 {
-                    if (File.Exists(tmpZipPath)) { 
+                    if (File.Exists(tmpZipPath))
+                    {
                         File.Delete(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"gitPull.zip");
                     }
                 }
@@ -194,7 +252,7 @@ namespace SteamAchievmentViewer
                 }
                 rv = false;
             }
-            
+
 
             return rv;
         }
