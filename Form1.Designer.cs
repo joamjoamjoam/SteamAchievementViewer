@@ -165,6 +165,7 @@
             Name = "Form1";
             Text = "Steam Achievement Viewer";
             Load += Form1_Load;
+            Shown += Form1_Shown;
             ((System.ComponentModel.ISupportInitialize)achWebView).EndInit();
             ResumeLayout(false);
             PerformLayout();

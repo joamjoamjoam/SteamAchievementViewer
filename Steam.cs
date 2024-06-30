@@ -7,6 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Security.Policy;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -21,16 +22,21 @@ namespace SteamAchievmentViewer
         public Boolean isOnline = true;
         private Dictionary<ulong, String> appList = new Dictionary<ulong, string>();
         private List<SteamGame> games = new List<SteamGame>();
+        public EventHandler OnSteamAppListLoaded;
 
-        public Steam(ulong steamAccountID, String steamWebKey)
+        public Steam(ulong steamAccountID, String steamWebKey, bool startOffline = false)
         {
             acctID = steamAccountID;
             webKey = steamWebKey;
+            isOnline = !startOffline;
             cacheRootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\cache";
             if (!Directory.Exists(cacheRootPath))
             {
                 Directory.CreateDirectory(cacheRootPath);
             }
+
+            Thread myThread = new Thread(new ThreadStart(fetchSteamGames));
+            myThread.Start();
         }
 
         public JObject? sendHTTPRequest(String url, String method = "GET")
@@ -71,33 +77,68 @@ namespace SteamAchievmentViewer
             return rv;
         }
 
-        public void getAppList()
+        public Dictionary<ulong, String> getAppList()
         {
-            JObject? appListObj = sendHTTPRequest($"http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key={webKey}&format=json");
+            return appList;
+        }
 
-            if (appListObj == null)
+        private void getAppListFromSteam()
+        {
+            ulong lastAppID = 0;
+            int loops = 0;
+            if (appList.Keys.Count == 0)
             {
-                if (File.Exists(cacheRootPath + "\\appListCache.json"))
+                try
                 {
-                    appListObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\appListCache.json"));
-                }
-            }
-            else
-            {
-                File.WriteAllText(cacheRootPath + "\\appListCache.json", appListObj.ToString());
-            }
+                    Boolean fetchContinue = true;
+                    JObject? appListObj = null;
 
-            try
-            {
-                foreach (JObject entry in appListObj["applist"]["apps"])
+                    while (fetchContinue)
+                    {
+                        loops++;
+                        appListObj = sendHTTPRequest($"https://api.steampowered.com/IStoreService/GetAppList/v1/?key={webKey}&include_games=true&last_appid={lastAppID}");
+                        fetchContinue = (appListObj["response"]["have_more_results"] != null) ? (bool)appListObj["response"]["have_more_results"] : false;
+                        lastAppID = (appListObj["response"]["last_appid"] != null) ? (ulong)appListObj["response"]["last_appid"] : lastAppID;
+                        foreach (JObject entry in appListObj["response"]["apps"])
+                        {
+                            appList[(ulong)entry["appid"]] = ((String)entry["name"]);
+                        }
+
+                    }
+                }
+                catch (Exception ex)
                 {
-                    appList[(ulong)entry["appid"]] = (String)entry["name"];
+                    appList = new Dictionary<ulong, String>();
                 }
 
-            }
-            catch (Exception ex)
-            {
+                if (appList.Keys.Count == 0)
+                {
+                    try
+                    {
+                        if (File.Exists(cacheRootPath + "\\appListCache.json"))
+                        {
+                            JObject appObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\appListCache.json"));
+                            foreach (JProperty prop in appObj.Properties())
+                            {
+                                appList.Add(ulong.Parse(prop.Name), Regex.Replace(prop.Value.Value<String>(), @"[^\u0000-\u007F]+", string.Empty));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // return empty applist json to app to throw an error.
+                        appList = new Dictionary<ulong, String>();
+                    }
 
+                }
+                else
+                {
+                    // Serialize app list to a file
+                    String appListJson = "{\n";
+                    appListJson += String.Join(",\n", appList.Select(kvp => $"\t\"{kvp.Key}\": \"{kvp.Value.Replace("\\", "\\\\").Replace("\"", "\\\"")}\""));
+                    appListJson += "}";
+                    File.WriteAllText(cacheRootPath + "\\appListCache.json", appListJson);
+                }
             }
         }
 
@@ -134,50 +175,54 @@ namespace SteamAchievmentViewer
             }
         }
 
-        public void fetchSteamGames()
+
+
+        private void fetchSteamGames()
         {
 
             if (appList.Count == 0)
             {
-                getAppList();
-            }
-            games.Clear();
+                getAppListFromSteam();
 
-            JObject? gameIDObj = sendHTTPRequest($"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={webKey}&steamid={acctID}&include_played_free_games=true&include_extended_appinfo=true");
+                games.Clear();
 
-            if (gameIDObj == null)
-            {
-                if (File.Exists(cacheRootPath + "\\gamesList.json"))
+                JObject? gameIDObj = sendHTTPRequest($"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={webKey}&steamid={acctID}&include_played_free_games=true&include_extended_appinfo=true");
+
+                if (gameIDObj == null)
                 {
-                    gameIDObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\gamesList.json"));
-                }
-            }
-            else
-            {
-                File.WriteAllText(cacheRootPath + "\\gamesList.json", gameIDObj.ToString());
-            }
-
-
-            if (gameIDObj != null)
-            {
-                foreach (JObject prop in (JArray)gameIDObj["response"]["games"])
-                {
-                    ulong appid = (ulong)prop["appid"];
-                    try
+                    if (File.Exists(cacheRootPath + "\\gamesList.json"))
                     {
-                        ulong playtimeForever = (ulong)prop["playtime_forever"];
-                        games.Add(new SteamGame(appList[appid], appid));
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"Error Fetching appdetails for {appid} - {e.Message}");
+                        gameIDObj = JObject.Parse(File.ReadAllText(cacheRootPath + "\\gamesList.json"));
                     }
                 }
+                else
+                {
+                    File.WriteAllText(cacheRootPath + "\\gamesList.json", gameIDObj.ToString());
+                }
+
+
+                if (gameIDObj != null)
+                {
+                    foreach (JObject prop in (JArray)gameIDObj["response"]["games"])
+                    {
+                        ulong appid = (ulong)prop["appid"];
+                        try
+                        {
+                            ulong playtimeForever = (ulong)prop["playtime_forever"];
+                            games.Add(new SteamGame(appList[appid], appid));
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"Error Fetching appdetails for {appid} - {e.Message}");
+                        }
+                    }
+                }
+                else
+                {
+                    //throw new Exception($"Error Fetching appdetails - Steam return a failure");
+                }
             }
-            else
-            {
-                throw new Exception($"Error Fetching appdetails - Steam return a failure");
-            }
+            OnSteamAppListLoaded?.Invoke(this, EventArgs.Empty);
         }
 
         public List<SteamGame> getGames()
