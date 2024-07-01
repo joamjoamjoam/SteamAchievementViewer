@@ -67,6 +67,8 @@ namespace SteamAchievmentViewer
                 {
                     steamClient = new Steam(steamAcctId, steamWebKey, startOffline: offlineModeCB.Checked);
                     steamClient.OnSteamAppListLoaded += OnSteamLoadedAppList;
+                    gameListSelectionCmbBox.Enabled = false;
+
                 }
 
                 if (raWebKey.Length == 0 || raUsername.Length == 0)
@@ -391,6 +393,24 @@ namespace SteamAchievmentViewer
             }
         }
 
+        private void sortGameListSelectionBox()
+        {
+            List<String> rv = new List<String>();
+
+            foreach (String item in gameListSelectionCmbBox.Items)
+            {
+                rv.Add(item);
+            }
+
+            rv = rv.OrderBy(name => name).ToList();
+
+            gameListSelectionCmbBox.Items.Clear();
+            foreach (String item in rv)
+            {
+                gameListSelectionCmbBox.Items.Add(item);
+            }
+        }
+
         public void reloadGameList(String raConsole = "")
         {
             bool frameShown = false;
@@ -423,9 +443,10 @@ namespace SteamAchievmentViewer
                     if (!gameListSelectionCmbBox.Items.Contains("Steam"))
                     {
                         gameListSelectionCmbBox.Items.Add("Steam");
+                        sortGameListSelectionBox();
                         gameListSelectionCmbBox.SelectedItem = "Steam";
                     }
-
+                    gameListSelectionCmbBox.Enabled = true;
                     if (steamClient.getAppList().Keys.Count == 0 && steamClient.webKey != "")
                     {
                         MessageBox.Show("App List Cache is outdated or Steam Credentials are invalid. Please Connect to the internet to download the new cache.", "");
@@ -456,6 +477,9 @@ namespace SteamAchievmentViewer
                 if (raClient == null && !gameListSelectionCmbBox.Items.Contains("RA Config Needed"))
                 {
                     gameListSelectionCmbBox.Items.Add("RA Config Needed");
+                    String selected = (String)gameListSelectionCmbBox.Items[gameListSelectionCmbBox.SelectedIndex];
+                    sortGameListSelectionBox();
+                    gameListSelectionCmbBox.SelectedItem = selected;
                     offlineModeCB.Checked = true;
                 }
                 else
@@ -464,6 +488,19 @@ namespace SteamAchievmentViewer
                     {
                         gameListSelectionCmbBox.Items.Add(console);
                     }
+                    String selected = "";
+                    if (gameListSelectionCmbBox.SelectedIndex >= 0)
+                    {
+                        selected = (String)gameListSelectionCmbBox.Items[gameListSelectionCmbBox.SelectedIndex];
+                    }
+                    
+                    sortGameListSelectionBox();
+
+                    if (selected != "")
+                    {
+                        gameListSelectionCmbBox.SelectedItem = selected;
+                    }
+                    
                 }
             }
         }
