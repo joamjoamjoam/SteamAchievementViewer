@@ -13,8 +13,9 @@ namespace SteamAchievmentViewer
     public partial class Form1 : Form
     {
         public Steam steamClient = null;
+        public RetroAchievements raClient = null;
         public List<SteamGame> games = new List<SteamGame>();
-        public SteamGame selectedGame = null;
+        public object selectedGame = null;
         public String htmlPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\index.html";
         public String introPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\intro.html";
         public String hiddenImgPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\locked.png";
@@ -22,8 +23,11 @@ namespace SteamAchievmentViewer
         public String divStatePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\divStates.json";
         private String steamWebKey = "";
         private ulong steamAcctId = 0;
+        private String raWebKey = "";
+        private String raUsername = "";
         private JObject divStateModel;
-        public delegate void ReloadGameListDelegate();
+        public delegate void ReloadGameListDelegate(String raConsole = "");
+        public delegate void AddToGameListSelectorDelegate();
 
 
 
@@ -37,7 +41,9 @@ namespace SteamAchievmentViewer
             {
                 JObject configObj = JObject.Parse(File.ReadAllText(configPath));
                 steamWebKey = configObj["steamWebKey"] == null ? "" : (String)configObj["steamWebKey"];
-                steamAcctId = (ulong)configObj["steamAcctID"];
+                steamAcctId = configObj["steamAcctID"] == null ? 0 : (ulong)configObj["steamAcctID"];
+                raUsername = configObj["RAUsername"] == null ? "" : (String)configObj["RAUsername"];
+                raWebKey = configObj["RAWebKey"] == null ? "" : (String)configObj["RAWebKey"];
 
                 // load Settings 
                 if (sortByComboBox.Items.Count >= Properties.Settings1.Default.sortComboBox)
@@ -51,21 +57,34 @@ namespace SteamAchievmentViewer
 
                 checkBox1.Checked = Properties.Settings1.Default.showHiddenTrophiesSet;
                 offlineModeCB.Checked = Properties.Settings1.Default.offlineModeSet;
+                groupAchievmentsBtn.Visible = false;
 
                 if (steamWebKey.Length == 0 || steamAcctId == 0)
                 {
-                    throw new Exception();
+                    //throw new Exception("Please load your Steam Web Key and Account ID");
                 }
                 else
                 {
                     steamClient = new Steam(steamAcctId, steamWebKey, startOffline: offlineModeCB.Checked);
                     steamClient.OnSteamAppListLoaded += OnSteamLoadedAppList;
                 }
-                groupAchievmentsBtn.Visible = false;
+
+                if (raWebKey.Length == 0 || raUsername.Length == 0)
+                {
+                    gameListSelectionCmbBox.Items.Add("RA Config Needed");
+                    //throw new Exception("Please Load Your Retro Achievment Username and Webkey");
+                }
+                else
+                {
+                    raClient = new RetroAchievements(raUsername, raWebKey, startOffline: offlineModeCB.Checked);
+                    raClient.OnRAConsoleListLoaded += OnRAConsoleListLoaded;
+                }
+
+
             }
-            catch
+            catch (Exception ex)
             {
-                MessageBox.Show("Please load your Steam Web Key and Account ID", "Configuration Needed");
+                MessageBox.Show(ex.Message, "Configuration Needed");
             }
 
             if (File.Exists(divStatePath))
@@ -94,6 +113,13 @@ namespace SteamAchievmentViewer
             updateMapsBtn.BackColor = Color.FromArgb(120, 120, 120);
             updateMapsBtn.ForeColor = Color.White;
 
+            gameListSelectionCmbBox.BackColor = Color.FromArgb(120, 120, 120);
+            gameListSelectionCmbBox.ForeColor = Color.White;
+
+            backBtn.BackColor = Color.FromArgb(120, 120, 120);
+            backBtn.ForeColor = Color.White;
+            backBtn.Visible = false;
+
         }
 
         async void InitializeAsync()
@@ -116,7 +142,17 @@ namespace SteamAchievmentViewer
 
                     if (selectedGame != null)
                     {
-                        String key = $"{selectedGame.id}-{content.Split(new char[] { '-' })[1]}";
+                        String key = $"";
+                        if (selectedGame.GetType() == typeof(SteamGame))
+                        {
+                            SteamGame game = (SteamGame)selectedGame;
+                            key = $"{game.id}-{content.Split(new char[] { '-' })[1]}";
+                        }
+                        else
+                        {
+                            RetroAchievementsGame game = (RetroAchievementsGame)selectedGame;
+                            key = $"RA{game.id}-{content.Split(new char[] { '-' })[1]}";
+                        }
                         key = Regex.Replace(key, "(Header|Div)$", "");
                         //MessageBox.Show($"{key} was Expanded");
                         if (divStateModel.ContainsKey(key))
@@ -132,9 +168,19 @@ namespace SteamAchievmentViewer
                 }
                 else if (content.StartsWith("collapsed-"))
                 {
+                    String key = $"";
                     if (selectedGame != null)
                     {
-                        String key = $"{selectedGame.id}-{content.Split(new char[] { '-' })[1]}";
+                        if (selectedGame.GetType() == typeof(SteamGame))
+                        {
+                            SteamGame game = (SteamGame)selectedGame;
+                            key = $"{game.id}-{content.Split(new char[] { '-' })[1]}";
+                        }
+                        else
+                        {
+                            RetroAchievementsGame game = (RetroAchievementsGame)selectedGame;
+                            key = $"RA{game.id}-{content.Split(new char[] { '-' })[1]}";
+                        }
                         key = Regex.Replace(key, "(Header|Div)$", "");
                         //MessageBox.Show($"{key} was Collapsed");
                         if (divStateModel.ContainsKey(key))
@@ -159,15 +205,27 @@ namespace SteamAchievmentViewer
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+
         }
 
         private void reloadFrame()
         {
             if (selectedGame != null && steamClient != null)
             {
-                steamClient.saveHTMLForGame(selectedGame.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
-                offlineModeCB.Checked = !steamClient.isOnline;
+                if (selectedGame.GetType() == typeof(SteamGame))
+                {
+                    SteamGame game = (SteamGame)selectedGame;
+                    steamClient.saveHTMLForGame(game.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
+                    offlineModeCB.Checked = !steamClient.isOnline;
+                }
+                else if (selectedGame.GetType() == typeof(RetroAchievementsGame))
+                {
+                    // Implement saveHTMLForGame for RA
+                    RetroAchievementsGame game = (RetroAchievementsGame)selectedGame;
+                    raClient.saveHTMLForGame(game, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
+                    offlineModeCB.Checked = !steamClient.isOnline;
+                }
+
                 achWebView.Source = new Uri(introPath);
                 achWebView.Source = new Uri(htmlPath);
             }
@@ -188,10 +246,9 @@ namespace SteamAchievmentViewer
 
         private void gamesListbox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            SteamGame g = (SteamGame)((ListBox)sender).SelectedItem;
-            selectedGame = g;
+
+            selectedGame = gamesListbox.Items[gamesListbox.SelectedIndex];
             reloadFrame();
-            groupAchievmentsBtn.Visible = true;
         }
 
         private void sortByComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -221,15 +278,33 @@ namespace SteamAchievmentViewer
             {
                 steamClient.isOnline = !cb.Checked;
             }
+
+            if (raClient != null)
+            {
+                raClient.isOnline = !cb.Checked;
+            }
         }
 
         private void groupAchievmentsBtn_Click(object sender, EventArgs e)
         {
             if (selectedGame != null)
             {
-                GroupAchievments tmpForm = new GroupAchievments(steamClient, selectedGame.id);
-                tmpForm.ShowDialog();
-                reloadFrame();
+                GroupAchievments tmpForm = null;
+                if (selectedGame.GetType() == typeof(SteamGame))
+                {
+                    SteamGame game = (SteamGame)selectedGame;
+                    tmpForm = new GroupAchievments(steamClient, game.id);
+                }
+                else if (selectedGame.GetType() == typeof(RetroAchievementsGame))
+                {
+
+                }
+
+                if (tmpForm != null)
+                {
+                    tmpForm.ShowDialog();
+                    reloadFrame();
+                }
             }
         }
 
@@ -316,27 +391,81 @@ namespace SteamAchievmentViewer
             }
         }
 
-        public void reloadGameList()
+        public void reloadGameList(String raConsole = "")
         {
-
-            if (steamClient != null)
+            bool frameShown = false;
+            if (raConsole.Length > 0)
             {
-                if (steamClient.getAppList().Keys.Count == 0 && steamClient.webKey != "")
+                gamesListbox.Items.Clear();
+                if (raConsole == "RA Config Needed")
                 {
-                    MessageBox.Show("App List Cache is outdated or Steam Credentials are invalid. Please Connect to the internet to download the new cache.", "");
+                    frameShown = true;
+                    showIntroFrame($"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body>{((steamClient == null) ? $"<h1>Steam API Configuration Needed!!</h1> <h3>Load your Steam Web Key and Steam Account ID (SteamID) in config/config.json</h3><p>Get Your Steam Web Key <a href=\"https://steamcommunity.com/dev/apikey\">HERE</a></p><p>Get Your SteamAccount ID (SteamID) <a href=\"https://steamdb.info/calculator/\">HERE</a></p>" : "")}{((raClient != null) ? "" : "<h1>RetroAchievment API Configuration Needed!!</h1> <h3>Load your RA Web Key and Username in config/config.json</h3><p>Get Your RA Web Key <a href=\"https://retroachievements.org/controlpanel.php\">HERE</a></p>")}</body>");
                 }
                 else
                 {
-
-                    gamesListbox.Items.Clear();
-                    List<SteamGame> gameList = steamClient.getGames().OrderBy(g => g.gameName).ToList();
-                    foreach (SteamGame g in gameList)
+                    backBtn.Visible = true;
+                    groupAchievmentsBtn.Visible = false;
+                    if (raClient != null && raClient.getConsoles().Contains(raConsole))
                     {
-                        gamesListbox.Items.Add(g);
+                        ulong consoleID = raClient.getConsoleIDForName(raConsole);
+                        foreach (RetroAchievementsGame game in raClient.getGameListForConsole(consoleID))
+                        {
+                            gamesListbox.Items.Add(game);
+                        }
                     }
                 }
             }
-            showIntroFrame($"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body>{((gamesListbox.Items.Count > 0) ? "<h1>Select Game From Game List</h1>" : "<h1>Error Loading Game Data From Steam and Local Cache</h1>")}</body>");
+            else
+            {
+                if (steamClient != null)
+                {
+                    if (!gameListSelectionCmbBox.Items.Contains("Steam"))
+                    {
+                        gameListSelectionCmbBox.Items.Add("Steam");
+                        gameListSelectionCmbBox.SelectedItem = "Steam";
+                    }
+
+                    if (steamClient.getAppList().Keys.Count == 0 && steamClient.webKey != "")
+                    {
+                        MessageBox.Show("App List Cache is outdated or Steam Credentials are invalid. Please Connect to the internet to download the new cache.", "");
+                    }
+                    else
+                    {
+                        backBtn.Visible = false;
+                        groupAchievmentsBtn.Visible = true;
+                        gamesListbox.Items.Clear();
+                        List<SteamGame> gameList = steamClient.getGames().OrderBy(g => g.gameName).ToList();
+                        foreach (SteamGame g in gameList)
+                        {
+                            gamesListbox.Items.Add(g);
+                        }
+                    }
+                }
+            }
+            if (!frameShown)
+            {
+                showIntroFrame($"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body>{((gamesListbox.Items.Count > 0) ? "<h1>Select Game From Game List</h1>" : (offlineModeCB.Checked) ? $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Offline Mode</h1><h3>No Cached Data for This System.</h3></body>" : "<h1>Error Loading Game Data ...</h1>")}</body>");
+            }
+        }
+
+        private void addToGameListSelector()
+        {
+            if (!(gameListSelectionCmbBox.Items.Count > 2))
+            {
+                if (raClient == null && !gameListSelectionCmbBox.Items.Contains("RA Config Needed"))
+                {
+                    gameListSelectionCmbBox.Items.Add("RA Config Needed");
+                    offlineModeCB.Checked = true;
+                }
+                else
+                {
+                    foreach (String console in raClient.getConsoles())
+                    {
+                        gameListSelectionCmbBox.Items.Add(console);
+                    }
+                }
+            }
         }
 
         private void OnSteamLoadedAppList(object sender, EventArgs e)
@@ -344,11 +473,16 @@ namespace SteamAchievmentViewer
             InvokeReloadGameList();
         }
 
+        private void OnRAConsoleListLoaded(object sender, EventArgs e)
+        {
+            InvokeAddToGameListSelector();
+        }
+
         private void Form1_Shown(object sender, EventArgs e)
         {
             // Generate Intro HTML
             String progressHTML = "<head><style>body {background-color: rgba(120, 120, 120, 1); color: #eee;} #myProgress { width: 100%; background-color: grey; } #myBar { width: 1%; height: 30px; background-color: #04AA6D; text-align: center; line-height: 30px; font-weight: bold; color: white; }</style><script>var i = 0; function move() { if (i == 0) { i = 1; var elem = document.getElementById('myBar'); var width = 1; var id = setInterval(frame, 500); function frame() { incr = Math.floor(Math.random() * 10); cont = true; if (width >= 100) { cont = false; width = 100; } else { width+= incr; if(width > 95){ \twidth = 95; } elem.style.width = width + '%'; elem.innerHTML = width + '%'; } clearInterval(id); if(cont){ \tid = setInterval(frame, incr * 400); } } } }</script></head><body onload=\"move()\"><h1 style=\"text-align: center;\">Loading Applist from Steam ...</h1><div id=\"myProgress\"> <div id=\"myBar\">1%</div> </div></body>";
-            String configHtml = $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Configuration Needed!!</h1> <h3>Load your Steam Web Key and Steam Account ID (SteamID) in config/config.json</h3><p>Get Your Steam Web Key <a href=\"https://steamcommunity.com/dev/apikey\">HERE</a></p><p>Get Your SteamAccount ID (SteamID) <a href=\"https://steamdb.info/calculator/\">HERE</a></p></body>";
+            String configHtml = $"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Steam API Configuration Needed!!</h1> <h3>Load your Steam Web Key and Steam Account ID (SteamID) in config/config.json</h3><p>Get Your Steam Web Key <a href=\"https://steamcommunity.com/dev/apikey\">HERE</a></p><p>Get Your SteamAccount ID (SteamID) <a href=\"https://steamdb.info/calculator/\">HERE</a></p>{((raClient != null) ? "" : "<h1>RetroAchievment API Configuration Needed!!</h1> <h3>Load your RA Web Key and Username in config/config.json</h3><p>Get Your RA Web Key <a href=\"https://retroachievements.org/controlpanel.php\">HERE</a></p>")}</body>";
             showIntroFrame(steamClient != null ? progressHTML : configHtml);
         }
 
@@ -356,12 +490,44 @@ namespace SteamAchievmentViewer
         {
             if (this.InvokeRequired)
             {
-                this.Invoke(new ReloadGameListDelegate(reloadGameList));
+                object[] parameters = new object[] { "" };
+                this.Invoke(new ReloadGameListDelegate(reloadGameList), parameters);
             }
             else
             {
                 reloadGameList();
             }
+        }
+
+        public void InvokeAddToGameListSelector()
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new AddToGameListSelectorDelegate(addToGameListSelector));
+            }
+            else
+            {
+                addToGameListSelector();
+            }
+        }
+
+        private void gameListSelectionCmbBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ComboBox cb = (ComboBox)sender;
+
+            if ((string)cb.Items[cb.SelectedIndex] == "Steam")
+            {
+                reloadGameList();
+            }
+            else
+            {
+                reloadGameList((String)cb.Items[cb.SelectedIndex]);
+            }
+        }
+
+        private void backBtn_Click(object sender, EventArgs e)
+        {
+            achWebView.GoBack();
         }
     }
 }

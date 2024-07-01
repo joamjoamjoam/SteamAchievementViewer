@@ -38,6 +38,8 @@
             offlineModeCB = new CheckBox();
             groupAchievmentsBtn = new Button();
             updateMapsBtn = new Button();
+            gameListSelectionCmbBox = new ComboBox();
+            backBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)achWebView).BeginInit();
             SuspendLayout();
             // 
@@ -46,9 +48,9 @@
             gamesListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             gamesListbox.FormattingEnabled = true;
             gamesListbox.ItemHeight = 15;
-            gamesListbox.Location = new Point(12, 47);
+            gamesListbox.Location = new Point(12, 62);
             gamesListbox.Name = "gamesListbox";
-            gamesListbox.Size = new Size(280, 439);
+            gamesListbox.Size = new Size(280, 424);
             gamesListbox.TabIndex = 2;
             gamesListbox.SelectedIndexChanged += gamesListbox_SelectedIndexChanged;
             // 
@@ -58,9 +60,9 @@
             achWebView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             achWebView.CreationProperties = null;
             achWebView.DefaultBackgroundColor = Color.White;
-            achWebView.Location = new Point(298, 47);
+            achWebView.Location = new Point(298, 62);
             achWebView.Name = "achWebView";
-            achWebView.Size = new Size(863, 442);
+            achWebView.Size = new Size(863, 427);
             achWebView.TabIndex = 3;
             achWebView.ZoomFactor = 1D;
             // 
@@ -89,7 +91,7 @@
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label2.Location = new Point(104, 12);
+            label2.Location = new Point(104, 10);
             label2.Name = "label2";
             label2.Size = new Size(71, 25);
             label2.TabIndex = 7;
@@ -99,7 +101,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label3.Location = new Point(338, 12);
+            label3.Location = new Point(338, 7);
             label3.Name = "label3";
             label3.Size = new Size(134, 25);
             label3.TabIndex = 8;
@@ -147,11 +149,34 @@
             updateMapsBtn.UseVisualStyleBackColor = true;
             updateMapsBtn.Click += updateMapsBtn_Click;
             // 
+            // gameListSelectionCmbBox
+            // 
+            gameListSelectionCmbBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            gameListSelectionCmbBox.FlatStyle = FlatStyle.Flat;
+            gameListSelectionCmbBox.FormattingEnabled = true;
+            gameListSelectionCmbBox.Location = new Point(13, 35);
+            gameListSelectionCmbBox.Name = "gameListSelectionCmbBox";
+            gameListSelectionCmbBox.Size = new Size(279, 23);
+            gameListSelectionCmbBox.TabIndex = 13;
+            gameListSelectionCmbBox.SelectedIndexChanged += gameListSelectionCmbBox_SelectedIndexChanged;
+            // 
+            // backBtn
+            // 
+            backBtn.Location = new Point(307, 35);
+            backBtn.Name = "backBtn";
+            backBtn.Size = new Size(75, 23);
+            backBtn.TabIndex = 14;
+            backBtn.Text = "Back";
+            backBtn.UseVisualStyleBackColor = true;
+            backBtn.Click += backBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1173, 503);
+            Controls.Add(backBtn);
+            Controls.Add(gameListSelectionCmbBox);
             Controls.Add(updateMapsBtn);
             Controls.Add(groupAchievmentsBtn);
             Controls.Add(offlineModeCB);
@@ -182,5 +207,7 @@
         private CheckBox offlineModeCB;
         private Button groupAchievmentsBtn;
         private Button updateMapsBtn;
+        private ComboBox gameListSelectionCmbBox;
+        private Button backBtn;
     }
 }

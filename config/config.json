@@ -1,4 +1,6 @@
 ﻿{
 	"steamWebKey": "",
-	"steamAcctID": ""
+	"steamAcctID": "",
+	"RAUsername" : "",
+	"RAWebKey" : ""
 }
