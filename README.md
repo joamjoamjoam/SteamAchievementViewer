@@ -8,6 +8,9 @@ Just another Steam Achievement Viewer that supports custom grouping of acheivemn
 ### Achievements View
 ![image info](/images/Achievements.png)
 
+### Retro Achievements View
+![image info](/images/RetroAchievements.png)
+
 ## Offline Mode
 
 Offline Mode will show Achievments for any games you have previously viewed including your earned achievments. You must visit each game at least once before its available offline (Thanks Stea Rate Limiting)
