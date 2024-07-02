@@ -242,6 +242,12 @@ namespace SteamAchievmentViewer
                 case "Show Missable Only":
                     rv = AchievementSortOrder.SHOWMISSABLEONLY;
                     break;
+                case "Most Retro Points":
+                    rv = AchievementSortOrder.SHOWMISSABLEONLY;
+                    break;
+                case "Least Achieved":
+                    rv = AchievementSortOrder.LEASTUNLOCKED;
+                    break;
             }
 
             return rv;
@@ -285,7 +291,6 @@ namespace SteamAchievmentViewer
 
         private void gamesListbox_SelectedIndexChanged(object sender, EventArgs e)
         {
-
             selectedGame = gamesListbox.Items[gamesListbox.SelectedIndex];
             if (selectedGame.GetType() == typeof(RetroAchievementsGame))
             {
@@ -293,13 +298,30 @@ namespace SteamAchievmentViewer
                 {
                     sortByComboBox.Items.Add("Show Missable Only");
                 }
+                if (!sortByComboBox.Items.Contains("Most Retro Points"))
+                {
+                    sortByComboBox.Items.Add("Most Retro Points");
+                }
+                if (!sortByComboBox.Items.Contains("Least Achieved"))
+                {
+                    sortByComboBox.Items.Add("Least Achieved");
+                }
             }
             else
             {
-                bool resetSelectedIndex = ((String)sortByComboBox.Items[sortByComboBox.SelectedIndex] == "Show Missable Only");
+                String selectedString = (String)sortByComboBox.Items[sortByComboBox.SelectedIndex];
+                bool resetSelectedIndex = (selectedString == "Show Missable Only" || selectedString == "Most Retro Points" || selectedString == "Least Achieved");
                 if (!sortByComboBox.Items.Contains("Show Missable Only"))
                 {
                     sortByComboBox.Items.Remove("Show Missable Only");
+                }
+                if (!sortByComboBox.Items.Contains("Most Retro Points"))
+                {
+                    sortByComboBox.Items.Remove("Most Retro Points");
+                }
+                if (!sortByComboBox.Items.Contains("Least Achieved"))
+                {
+                    sortByComboBox.Items.Remove("Least Achieved");
                 }
                 if (resetSelectedIndex)
                 {
@@ -549,14 +571,14 @@ namespace SteamAchievmentViewer
                     {
                         selected = (String)gameListSelectionCmbBox.Items[gameListSelectionCmbBox.SelectedIndex];
                     }
-                    
+
                     sortGameListSelectionBox();
 
                     if (selected != "")
                     {
                         gameListSelectionCmbBox.SelectedItem = selected;
                     }
-                    
+
                 }
             }
         }

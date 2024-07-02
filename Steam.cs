@@ -684,7 +684,9 @@ namespace SteamAchievmentViewer
         LOCKED,
         UNLOCKEDGAME,
         LOCKEDGAME,
-        SHOWMISSABLEONLY
+        SHOWMISSABLEONLY,
+        MOSTRETROPOINTS,
+        LEASTUNLOCKED
     }
 
     public class SteamAchievment
