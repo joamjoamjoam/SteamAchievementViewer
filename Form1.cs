@@ -4,9 +4,11 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace SteamAchievmentViewer
 {
@@ -210,6 +212,41 @@ namespace SteamAchievmentViewer
 
         }
 
+        public AchievementSortOrder getSortOrder(String sortOrder)
+        {
+            AchievementSortOrder rv = AchievementSortOrder.ABSOLUTE;
+
+            switch (sortOrder)
+            {
+                case "Game Order":
+                    rv = AchievementSortOrder.ABSOLUTE;
+                    break;
+                case "Name A-Z":
+                    rv = AchievementSortOrder.NAMEASC;
+                    break;
+                case "Name Z-A":
+                    rv = AchievementSortOrder.NAMEDESC;
+                    break;
+                case "Unlocked First A - Z":
+                    rv = AchievementSortOrder.UNLOCKED;
+                    break;
+                case "Locked First A - Z":
+                    rv = AchievementSortOrder.LOCKED;
+                    break;
+                case "Unlocked First Game Order":
+                    rv = AchievementSortOrder.UNLOCKEDGAME;
+                    break;
+                case "Locked First Game Order":
+                    rv = AchievementSortOrder.LOCKEDGAME;
+                    break;
+                case "Show Missable Only":
+                    rv = AchievementSortOrder.SHOWMISSABLEONLY;
+                    break;
+            }
+
+            return rv;
+        }
+
         private void reloadFrame()
         {
             if (selectedGame != null && steamClient != null)
@@ -217,7 +254,7 @@ namespace SteamAchievmentViewer
                 if (selectedGame.GetType() == typeof(SteamGame))
                 {
                     SteamGame game = (SteamGame)selectedGame;
-                    steamClient.saveHTMLForGame(game.id, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
+                    steamClient.saveHTMLForGame(game.id, htmlPath, getSortOrder((String)sortByComboBox.Items[sortByComboBox.SelectedIndex]), showHidden: checkBox1.Checked, divStates: divStateModel);
                     offlineModeCB.Checked = !steamClient.isOnline;
                 }
                 else if (selectedGame.GetType() == typeof(RetroAchievementsGame))
@@ -250,6 +287,25 @@ namespace SteamAchievmentViewer
         {
 
             selectedGame = gamesListbox.Items[gamesListbox.SelectedIndex];
+            if (selectedGame.GetType() == typeof(RetroAchievementsGame))
+            {
+                if (!sortByComboBox.Items.Contains("Show Missable Only"))
+                {
+                    sortByComboBox.Items.Add("Show Missable Only");
+                }
+            }
+            else
+            {
+                bool resetSelectedIndex = ((String)sortByComboBox.Items[sortByComboBox.SelectedIndex] == "Show Missable Only");
+                if (!sortByComboBox.Items.Contains("Show Missable Only"))
+                {
+                    sortByComboBox.Items.Remove("Show Missable Only");
+                }
+                if (resetSelectedIndex)
+                {
+                    sortByComboBox.SelectedIndex = 0;
+                }
+            }
             reloadFrame();
         }
 
