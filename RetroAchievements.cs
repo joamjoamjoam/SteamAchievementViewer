@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -257,6 +258,20 @@ namespace SteamAchievmentViewer
             webLink = $"https://retroachievements.org/game/{id}";
         }
 
+        public bool isBeaten()
+        {
+            List<RetroAchievementsAchievemnt> achList = GetAllAchievments();
+            List<RetroAchievementsAchievemnt> progressionList = achList.Where(ach => ach.achType.ToLower() == "progression").ToList();
+            List<RetroAchievementsAchievemnt> winConditionList = achList.Where(ach => ach.achType.ToLower() == "win_condition").ToList();
+            return (achList.Count > 0 && progressionList.Where(ach => !ach.getUnlockStatus()).Count() == 0 && winConditionList.Where(ach => ach.getUnlockStatus()).Count() > 0);
+        }
+
+        public bool isMastered()
+        {
+            List<RetroAchievementsAchievemnt> achList = GetAllAchievments();
+            return (achList.Count > 0 && achList.Where(ach => (!ach.getUnlockStatus())).Count() == 0);
+        }
+
         public void addAchievementsToObject(JObject json)
         {
             achievements = new Dictionary<string, List<RetroAchievementsAchievemnt>>();
@@ -326,6 +341,9 @@ namespace SteamAchievmentViewer
                     case AchievementSortOrder.LEASTUNLOCKED:
                         rv.Add(key, achievements[key].OrderBy(c => c.numAwarded).ToList());
                         break;
+                    case AchievementSortOrder.LEFTTOBEAT:
+                        rv.Add(key, achievements[key].Where(c => c.achType == "progression" || c.achType == "win_condition").ToList());
+                        break;
                 }
             }
 
@@ -371,6 +389,7 @@ namespace SteamAchievmentViewer
             css.Add(".achTypeTitle {background-color: rgba(0, 0, 0, 1); border-radius:15px; font-size: 20px;display: inline-block; padding: 0px 5px;   position: relative; float: right; margin: 0px 5px 0px 0px;}");
             css.Add(".achmissableTitle {background-color: rgba(250, 90, 90, 1)}");
             css.Add(".achprogressionTitle {background-color: #00A5D6}");
+            css.Add(".achwin_conditionTitle {background-color: gold; color: black}");
             css.Add(".achPointsTitle {background-color: #00A5D6; border-radius:15px; font-size: 15px;display: inline-block; padding: 0px 5px; position: relative; float: right; margin: 0px 5px 0px 0px;}");
             css.Add(".achFakeTypeTitle {background-color: rgba(120, 120, 120, 1); color: rgba(120, 120, 120, 1); visibility: hidden;}");
             css.Add("progress[value] {   -webkit-appearance: none;    appearance: none; }  progress[value]::-webkit-progress-bar {   background-color: black;   display: inline-block;   border-radius: 100px;   height: 7px; width:100%; }  progress[value]::-webkit-progress-value { background-color: gold; border-radius: 100px; height: 7px; ; width:100%;} progress {width: 0; min-width: 100%; padding-right: 5px}");
@@ -388,12 +407,18 @@ namespace SteamAchievmentViewer
             javascript.Add("function sendExpandEvent(id) {window.chrome.webview.postMessage('expanded-' + id);}");
 
 
-            html.Add($"<h1 id=\"{name}Header\">{name} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements</h1>");
+            html.Add($"<h1 id=\"{name}Header\">{name} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements {((isMastered()) ? $"(Mastered)" : (isBeaten()) ? $"(Beaten)" : "")}</h1>");
+
             // Add Controls
             if (showOfflineHeader)
             {
                 html.Add("<h2 class=\"offlineHeader\">Offline Mode Enabled (Error Contacting Steam)</h2>");
             }
+            //string masteryBadgeHtml = $"<h1 id=\"{name}MasteryHeader\" class=\"gameBadge {((isMastered()) ? $"gameMasteryBadge\"> Mastered" : (isBeaten()) ? $"gameBeatenBadge\"> Beaten" : "")}</h1>";
+            //if (isBeaten() || isMastered())
+            //{
+            //    html.Add(masteryBadgeHtml);
+            //}
 
             String buttonHTML = $"<table><tr>";
             if (achievements.Keys.Count > 1)
@@ -524,7 +549,7 @@ namespace SteamAchievmentViewer
             double percentUnlocked = Math.Round(((float)numAwarded / (float)totalPlayers) * 100, 2);
             double percentUnlockedHardcore = Math.Round(((float)numAwardedHardcore / (float)totalPlayers) * 100, 2);
 
-            rv.Add($"<tr class=\"achRootRow{((unlocked) ? " acRootRowUnlocked" : " acRootRowLocked")}\"><td class=\"achImageCont\"><a href=\"{achievmentLink}\"><img class=\"achImage\" src=\"{((unlocked) ? unlockedImage : lockedImage)}\"></a></td><td><table class=\"achTextTable\"><tr><td><p class=\"achTitle\">{name}</p></td></tr><tr><td class=\"achDescription\">{description}</td></tr><tr><td class=\"achUnlocked\">{(unlocked ? $"Unlocked {unlockedTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}" : "")}</td></tr></table></td><td class=\"achRootRowDetails\"><table style=\"width: 100%\"><tr><td><p class=\"achTypeTitle {((achType != "") ? $"ach{achType}Title" : "achFakeTypeTitle")}\">{System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(((achType != "") ? achType.ToLower() : "faketype"))}</p></td></tr><tr><td><p class=\"achPointsTitle\">Points: Base {basePoints} |  Retro: {retroRatio}</p></td></tr><tr><td><progress id=\"file\" class=\"achEarnedProgressBar\" value=\"{percentUnlocked}\" max=\"100\"></progress><table style=\"width: 100%\"><tbody><tr><td class=\"usersEarnedText\">{numAwarded} ({numAwardedHardcore}) of {totalPlayers} players\n{percentUnlocked}% ({percentUnlockedHardcore}%) Unlock Rate</td></tr></tbody></table></td></tr></td></tr></table></td></tr>");
+            rv.Add($"<tr class=\"achRootRow{((getUnlockStatus()) ? " acRootRowUnlocked" : " acRootRowLocked")}\"><td class=\"achImageCont\"><a href=\"{achievmentLink}\"><img class=\"achImage\" src=\"{((getUnlockStatus()) ? unlockedImage : lockedImage)}\"></a></td><td><table class=\"achTextTable\"><tr><td><p class=\"achTitle\">{name}</p></td></tr><tr><td class=\"achDescription\">{description}</td></tr><tr><td class=\"achUnlocked\">{(getUnlockStatus() ? $"Unlocked {unlockedTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}" : "")}</td></tr></table></td><td class=\"achRootRowDetails\"><table style=\"width: 100%\"><tr><td><p class=\"achTypeTitle {((achType != "") ? $"ach{achType}Title" : "achFakeTypeTitle")}\">{System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(((achType != "") ? achType.ToLower() : "faketype")).Replace("_", " ")}</p></td></tr><tr><td><p class=\"achPointsTitle\">Points: Base {basePoints} |  Retro: {retroRatio}</p></td></tr><tr><td><progress id=\"file\" class=\"achEarnedProgressBar\" value=\"{percentUnlocked}\" max=\"100\"></progress><table style=\"width: 100%\"><tbody><tr><td class=\"usersEarnedText\">{numAwarded} ({numAwardedHardcore}) of {totalPlayers} players\n{percentUnlocked}% ({percentUnlockedHardcore}%) Unlock Rate</td></tr></tbody></table></td></tr></td></tr></table></td></tr>");
 
             return rv;
         }

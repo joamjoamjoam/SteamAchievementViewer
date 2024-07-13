@@ -124,12 +124,14 @@ namespace SteamAchievmentViewer
             backBtn.ForeColor = Color.White;
             backBtn.Visible = false;
 
+
         }
 
         async void InitializeAsync()
         {
             await achWebView.EnsureCoreWebView2Async(null);
             achWebView.CoreWebView2.WebMessageReceived += MessageReceived;
+
         }
 
         void MessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
@@ -243,10 +245,13 @@ namespace SteamAchievmentViewer
                     rv = AchievementSortOrder.SHOWMISSABLEONLY;
                     break;
                 case "Most Retro Points":
-                    rv = AchievementSortOrder.SHOWMISSABLEONLY;
+                    rv = AchievementSortOrder.MOSTRETROPOINTS;
                     break;
                 case "Least Achieved":
                     rv = AchievementSortOrder.LEASTUNLOCKED;
+                    break;
+                case "Show Req to Beat Game":
+                    rv = AchievementSortOrder.LEFTTOBEAT;
                     break;
             }
 
@@ -267,7 +272,7 @@ namespace SteamAchievmentViewer
                 {
                     // Implement saveHTMLForGame for RA
                     RetroAchievementsGame game = (RetroAchievementsGame)selectedGame;
-                    raClient.saveHTMLForGame(game, htmlPath, (AchievementSortOrder)sortByComboBox.SelectedIndex, showHidden: checkBox1.Checked, divStates: divStateModel);
+                    raClient.saveHTMLForGame(game, htmlPath, getSortOrder((String)sortByComboBox.Items[sortByComboBox.SelectedIndex]), showHidden: checkBox1.Checked, divStates: divStateModel);
                     offlineModeCB.Checked = !steamClient.isOnline;
                 }
 
@@ -279,14 +284,22 @@ namespace SteamAchievmentViewer
         private void showIntroFrame(String html)
         {
             File.WriteAllText(introPath, html);
-            if (achWebView.Source.AbsoluteUri == new Uri(introPath).AbsoluteUri)
+            try
             {
-                achWebView.Reload();
+                if (achWebView.Source.AbsoluteUri == new Uri(introPath).AbsoluteUri)
+                {
+                    achWebView.Reload();
+                }
+                else
+                {
+                    achWebView.Source = new Uri(introPath);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                achWebView.Source = new Uri(introPath);
+                MessageBox.Show($"Exception:\n{ex.Message}");
             }
+
         }
 
         private void gamesListbox_SelectedIndexChanged(object sender, EventArgs e)
