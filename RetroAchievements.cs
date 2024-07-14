@@ -245,7 +245,8 @@ namespace SteamAchievmentViewer
         public readonly ulong consoleID = 0;
         public readonly String webLink = "";
         public ulong totalPlayers = 0;
-        public ulong totalBasePoints = 0; // Basw
+        public ulong totalBasePoints = 0; // Base
+        public List<String> validHashes = new List<String>();
         public Dictionary<String, List<RetroAchievementsAchievemnt>> achievements = new Dictionary<string, List<RetroAchievementsAchievemnt>>();
 
         public RetroAchievementsGame(JObject json)
@@ -253,9 +254,32 @@ namespace SteamAchievmentViewer
             id = (ulong)json["ID"];
             consoleID = (ulong)json["ConsoleID"];
             name = (String)json["Title"];
-            
+
+            if (json.ContainsKey("Hashes"))
+            {
+                validHashes = ((JArray)json["Hashes"]).Select(p => (String)p).Select(p => p.ToLower()).ToList();
+            }
+
 
             webLink = $"https://retroachievements.org/game/{id}";
+        }
+
+        public String validateHashList(Dictionary<String, String> hashMap)
+        {
+            String rv = "";
+            foreach (KeyValuePair<String, String> kvp in hashMap)
+            {
+                if (kvp.Key.Contains("3 Ninjas"))
+                {
+
+                }
+                if (validHashes.Contains(kvp.Value))
+                {
+                    rv = kvp.Key;
+                    break;
+                }
+            }
+            return rv;
         }
 
         public bool isBeaten()

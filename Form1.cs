@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -27,6 +29,8 @@ namespace SteamAchievmentViewer
         private ulong steamAcctId = 0;
         private String raWebKey = "";
         private String raUsername = "";
+        public String emuDeckCachePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\cache\\emuDeckHashes.json";
+        public Dictionary<String, String> hashMap = new Dictionary<String, String>();
         private JObject divStateModel;
         public delegate void ReloadGameListDelegate(String raConsole = "");
         public delegate void AddToGameListSelectorDelegate();
@@ -120,11 +124,122 @@ namespace SteamAchievmentViewer
             gameListSelectionCmbBox.BackColor = Color.FromArgb(120, 120, 120);
             gameListSelectionCmbBox.ForeColor = Color.White;
 
+            menuStrip1.BackColor = Color.FromArgb(65, 65, 65);
+            menuStrip1.ForeColor = Color.White;
+
+
             backBtn.BackColor = Color.FromArgb(120, 120, 120);
             backBtn.ForeColor = Color.White;
             backBtn.Visible = false;
 
+            if (File.Exists(emuDeckCachePath))
+            {
+                try
+                {
+                    JObject obj = JObject.Parse(File.ReadAllText(emuDeckCachePath));
+                    foreach (JProperty prop in obj.Properties())
+                    {
+                        hashMap.Add(prop.Name, (String)prop.Value.Value<String>());
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Error Loading Emudeck Hash Cache. Deleting it.");
+                    File.Delete(emuDeckCachePath);
+                }
+                
+            }
+        }
 
+        void gamesListBoxDrawItem(object sender, DrawItemEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            SolidBrush backgroundBrush = new SolidBrush(e.BackColor);
+            SolidBrush foregroundBrush = new SolidBrush(e.ForeColor);
+            Font textFont = e.Font;
+            string text = e.Index >= 0 ? this.gamesListbox.Items[e.Index].ToString() : "";
+
+            if (e.Index >= 0 && this.gamesListbox.Items[e.Index].GetType() == typeof(RetroAchievementsGame))
+            {
+                RetroAchievementsGame props = (this.gamesListbox.Items[e.Index] as RetroAchievementsGame);
+                bool romMissing = ((props.validateHashList(hashMap) == "") && hashMap.Keys.Count > 0);
+                foregroundBrush = new SolidBrush(romMissing ? Color.FromArgb(255, 255, 179, 173) : e.ForeColor);
+                if (romMissing)
+                {
+                    text += " (Missing Rom)";
+                }
+            }
+
+            RectangleF rectangle = new RectangleF(new PointF(e.Bounds.X, e.Bounds.Y), new SizeF(e.Bounds.Width, g.MeasureString(text, textFont).Height));
+
+            g.FillRectangle(backgroundBrush, rectangle);
+            g.DrawString(text, textFont, foregroundBrush, rectangle);
+
+            backgroundBrush.Dispose();
+            foregroundBrush.Dispose();
+            g.Dispose();
+        }
+
+        public Dictionary<String, String> getEDHashMap(String path)
+        {
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            Dictionary<String, String> rv = new Dictionary<String, String>();
+            if (Directory.Exists(path) && hashMap.Keys.Count() == 0)
+            {
+                foreach (String file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                {
+                    byte[] data = null;
+                    if (Path.GetExtension(file).ToLower() == ".zip")
+                    {
+                        data = DecompressRom(File.ReadAllBytes(file));
+                        if (data == null)
+                        {
+
+                        }
+                    }
+                    else
+                    {
+                        data = File.ReadAllBytes(file);
+                        if (data == null)
+                        {
+
+                        }
+                    }
+
+
+                    rv.Add(file, calcMD5Hash(data));
+                }
+            }
+            timer.Stop();
+            Debug.WriteLine($"Hashed {rv.Keys.Count} files in {timer.Elapsed.TotalSeconds} s");
+            return rv;
+        }
+
+        static byte[] DecompressRom(byte[] data)
+        {
+            byte[] rv = null;
+            ZipArchive arch = new ZipArchive(new MemoryStream(data));
+            if (arch.Entries.Count > 0)
+            {
+                Stream romData = arch.Entries[0].Open();
+                MemoryStream memStrm = new MemoryStream();
+                romData.CopyTo(memStrm);
+                rv = memStrm.ToArray();
+            }
+            return rv;
+        }
+
+        public String calcMD5Hash(byte[] data)
+        {
+            String rv = "";
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] hashBytes = md5.ComputeHash(data);
+
+                rv = Convert.ToHexString(hashBytes).ToLower(); // .NET 5 +
+            }
+            return rv;
         }
 
         async void InitializeAsync()
@@ -520,6 +635,7 @@ namespace SteamAchievmentViewer
                     if (raClient != null && raClient.getConsoles().Contains(raConsole))
                     {
                         ulong consoleID = raClient.getConsoleIDForName(raConsole);
+
                         foreach (RetroAchievementsGame game in raClient.getGameListForConsole(consoleID))
                         {
                             gamesListbox.Items.Add(game);
@@ -656,6 +772,42 @@ namespace SteamAchievmentViewer
         private void backBtn_Click(object sender, EventArgs e)
         {
             achWebView.GoBack();
+        }
+
+        
+
+        private void setupEmudeckInstallToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bool exitBtnEnabled = backBtn.Enabled;
+            backBtn.Visible = false;
+            gamesListbox.Enabled = false;
+            gameListSelectionCmbBox.Enabled = false;
+            FolderBrowserDialog ofd = new FolderBrowserDialog();
+            if (ofd.ShowDialog() == DialogResult.OK && Directory.Exists(ofd.SelectedPath) && Directory.Exists(ofd.SelectedPath + "\\snes"))
+            {
+                //MessageBox.Show("Calculating Emudeck Rom Hashes");
+                showIntroFrame($"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>Caclulating EmuDeck Hashes</h1></body>");
+                hashMap = getEDHashMap(ofd.SelectedPath);
+                if (hashMap.Keys.Count > 0)
+                {
+                    String emuDeckJson = "{\n";
+
+                    emuDeckJson += String.Join(", \n\t", hashMap.Select(kvp => $"\"{kvp.Key.Replace("\\", "\\\\")}\": \"{kvp.Value}\""));
+
+                    emuDeckJson += "\n}";
+                    File.WriteAllText(emuDeckCachePath, emuDeckJson);
+                    showIntroFrame($"<head><style>body {{background-color: rgba(120, 120, 120, 1); color: #eee;}}</style></head><body><h1>EmuDeck Hashes Calculated Successfully</h1></body>");
+                    //MessageBox.Show("Emudeck Hashes Calculated Successfully");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select the Emudeck 'roms' Folder.", "Incorrect FIlder Selected");
+            }
+
+            backBtn.Visible = exitBtnEnabled;
+            gamesListbox.Enabled = true;
+            gameListSelectionCmbBox.Enabled = true;
         }
     }
 }

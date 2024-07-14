@@ -40,18 +40,24 @@
             updateMapsBtn = new Button();
             gameListSelectionCmbBox = new ComboBox();
             backBtn = new Button();
+            menuStrip1 = new MenuStrip();
+            toolsToolStripMenuItem = new ToolStripMenuItem();
+            setupEmudeckInstallToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)achWebView).BeginInit();
+            menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // gamesListbox
             // 
             gamesListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            gamesListbox.DrawMode = DrawMode.OwnerDrawFixed;
             gamesListbox.FormattingEnabled = true;
             gamesListbox.ItemHeight = 15;
-            gamesListbox.Location = new Point(12, 62);
+            gamesListbox.Location = new Point(12, 92);
             gamesListbox.Name = "gamesListbox";
-            gamesListbox.Size = new Size(280, 424);
+            gamesListbox.Size = new Size(280, 439);
             gamesListbox.TabIndex = 2;
+            gamesListbox.DrawItem += gamesListBoxDrawItem;
             gamesListbox.SelectedIndexChanged += gamesListbox_SelectedIndexChanged;
             // 
             // achWebView
@@ -60,9 +66,9 @@
             achWebView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             achWebView.CreationProperties = null;
             achWebView.DefaultBackgroundColor = Color.White;
-            achWebView.Location = new Point(298, 62);
+            achWebView.Location = new Point(298, 92);
             achWebView.Name = "achWebView";
-            achWebView.Size = new Size(863, 427);
+            achWebView.Size = new Size(863, 446);
             achWebView.TabIndex = 3;
             achWebView.ZoomFactor = 1D;
             // 
@@ -72,7 +78,7 @@
             sortByComboBox.FlatStyle = FlatStyle.Flat;
             sortByComboBox.FormattingEnabled = true;
             sortByComboBox.Items.AddRange(new object[] { "Game Order", "Name A-Z", "Name Z-A", "Unlocked First A-Z", "Locked First A-Z", "Unlocked First Game Order", "Locked First Game Order", "Show Req to Beat Game" });
-            sortByComboBox.Location = new Point(943, 12);
+            sortByComboBox.Location = new Point(943, 34);
             sortByComboBox.Name = "sortByComboBox";
             sortByComboBox.Size = new Size(210, 23);
             sortByComboBox.TabIndex = 4;
@@ -81,7 +87,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(890, 15);
+            label1.Location = new Point(890, 37);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 5;
@@ -91,7 +97,7 @@
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label2.Location = new Point(104, 10);
+            label2.Location = new Point(104, 32);
             label2.Name = "label2";
             label2.Size = new Size(71, 25);
             label2.TabIndex = 7;
@@ -101,7 +107,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label3.Location = new Point(397, 7);
+            label3.Location = new Point(373, 30);
             label3.Name = "label3";
             label3.Size = new Size(134, 25);
             label3.TabIndex = 8;
@@ -110,7 +116,7 @@
             // checkBox1
             // 
             checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(787, 3);
+            checkBox1.Location = new Point(787, 25);
             checkBox1.Name = "checkBox1";
             checkBox1.Size = new Size(97, 19);
             checkBox1.TabIndex = 9;
@@ -121,7 +127,7 @@
             // offlineModeCB
             // 
             offlineModeCB.AutoSize = true;
-            offlineModeCB.Location = new Point(787, 26);
+            offlineModeCB.Location = new Point(787, 48);
             offlineModeCB.Name = "offlineModeCB";
             offlineModeCB.Size = new Size(96, 19);
             offlineModeCB.TabIndex = 10;
@@ -131,7 +137,7 @@
             // 
             // groupAchievmentsBtn
             // 
-            groupAchievmentsBtn.Location = new Point(533, 3);
+            groupAchievmentsBtn.Location = new Point(533, 25);
             groupAchievmentsBtn.Name = "groupAchievmentsBtn";
             groupAchievmentsBtn.Size = new Size(121, 38);
             groupAchievmentsBtn.TabIndex = 11;
@@ -141,7 +147,7 @@
             // 
             // updateMapsBtn
             // 
-            updateMapsBtn.Location = new Point(660, 3);
+            updateMapsBtn.Location = new Point(660, 25);
             updateMapsBtn.Name = "updateMapsBtn";
             updateMapsBtn.Size = new Size(121, 38);
             updateMapsBtn.TabIndex = 12;
@@ -154,7 +160,7 @@
             gameListSelectionCmbBox.DropDownStyle = ComboBoxStyle.DropDownList;
             gameListSelectionCmbBox.FlatStyle = FlatStyle.Flat;
             gameListSelectionCmbBox.FormattingEnabled = true;
-            gameListSelectionCmbBox.Location = new Point(13, 35);
+            gameListSelectionCmbBox.Location = new Point(13, 57);
             gameListSelectionCmbBox.Name = "gameListSelectionCmbBox";
             gameListSelectionCmbBox.Size = new Size(279, 23);
             gameListSelectionCmbBox.TabIndex = 13;
@@ -162,7 +168,7 @@
             // 
             // backBtn
             // 
-            backBtn.Location = new Point(307, 35);
+            backBtn.Location = new Point(307, 57);
             backBtn.Name = "backBtn";
             backBtn.Size = new Size(75, 23);
             backBtn.TabIndex = 14;
@@ -170,11 +176,34 @@
             backBtn.UseVisualStyleBackColor = true;
             backBtn.Click += backBtn_Click;
             // 
+            // menuStrip1
+            // 
+            menuStrip1.Items.AddRange(new ToolStripItem[] { toolsToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(1173, 24);
+            menuStrip1.TabIndex = 15;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // toolsToolStripMenuItem
+            // 
+            toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { setupEmudeckInstallToolStripMenuItem });
+            toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            toolsToolStripMenuItem.Size = new Size(46, 20);
+            toolsToolStripMenuItem.Text = "Tools";
+            // 
+            // setupEmudeckInstallToolStripMenuItem
+            // 
+            setupEmudeckInstallToolStripMenuItem.Name = "setupEmudeckInstallToolStripMenuItem";
+            setupEmudeckInstallToolStripMenuItem.Size = new Size(190, 22);
+            setupEmudeckInstallToolStripMenuItem.Text = "Setup Emudeck Install";
+            setupEmudeckInstallToolStripMenuItem.Click += setupEmudeckInstallToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1173, 503);
+            ClientSize = new Size(1173, 552);
             Controls.Add(backBtn);
             Controls.Add(gameListSelectionCmbBox);
             Controls.Add(updateMapsBtn);
@@ -187,11 +216,15 @@
             Controls.Add(sortByComboBox);
             Controls.Add(achWebView);
             Controls.Add(gamesListbox);
+            Controls.Add(menuStrip1);
+            MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Steam Achievement Viewer";
             Load += Form1_Load;
             Shown += Form1_Shown;
             ((System.ComponentModel.ISupportInitialize)achWebView).EndInit();
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -209,5 +242,8 @@
         private Button updateMapsBtn;
         private ComboBox gameListSelectionCmbBox;
         private Button backBtn;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem toolsToolStripMenuItem;
+        private ToolStripMenuItem setupEmudeckInstallToolStripMenuItem;
     }
 }
