@@ -13,15 +13,17 @@ using System.Threading.Tasks;
 
 namespace SteamAchievmentViewer
 {
+
     public class RetroAchievements
     {
-        String cacheRootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\cache";
         Dictionary <ulong, String> consoleList = new Dictionary<ulong, String> ();
         Dictionary<ulong, List<RetroAchievementsGame>> gameList = new Dictionary<ulong, List<RetroAchievementsGame>>();
         public bool isOnline = true;
         String username = "";
         String raWebKey = "";
         public EventHandler OnRAConsoleListLoaded;
+        public static String cacheRootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\cache";
+
         public RetroAchievements(String username, String raWebKey, bool startOffline = false)
         {
             isOnline = !startOffline;
@@ -128,6 +130,22 @@ namespace SteamAchievmentViewer
             return rv;
         }
 
+        public List<RetroAchievementsGame> getCompleteListForConsole(ulong consoleID)
+        {
+            List<RetroAchievementsGame> rv = new List<RetroAchievementsGame>();
+            fetchGamesForConsole(consoleID);
+            if (gameList.ContainsKey(consoleID))
+            {
+                rv = gameList[consoleID];
+                foreach (RetroAchievementsGame g in gameList[consoleID])
+                {
+                    fetchAchievementsForGame(g);
+                }
+            }
+
+            return rv;
+        }
+
         public ulong getConsoleIDForName(String name)
         {
             ulong consoleID = 0;
@@ -144,7 +162,7 @@ namespace SteamAchievmentViewer
 
         public void fetchAchievementsForGame(RetroAchievementsGame game)
         {
-            String cachePath = $"{cacheRootPath}\\RAConsole{game.consoleID}Game{game.id}AchList.json";
+            String cachePath = game.cachePath;
             JObject achObj = null;
             achObj = (JObject)sendHTTPRequest($"https://retroachievements.org/API/API_GetGameInfoAndUserProgress.php?z={username}&y={raWebKey}&g={game.id}&u={username}&a=1");
             try
@@ -248,7 +266,9 @@ namespace SteamAchievmentViewer
         public ulong totalBasePoints = 0; // Base
         public List<String> validHashes = new List<String>();
         public Dictionary<String, List<RetroAchievementsAchievemnt>> achievements = new Dictionary<string, List<RetroAchievementsAchievemnt>>();
-
+        public bool showIALink = false;
+        public double retroRatio = 0;
+        public readonly String cachePath = "";
         public RetroAchievementsGame(JObject json)
         {
             id = (ulong)json["ID"];
@@ -262,23 +282,48 @@ namespace SteamAchievmentViewer
 
 
             webLink = $"https://retroachievements.org/game/{id}";
+            cachePath = $"{RetroAchievements.cacheRootPath}\\RAConsole{consoleID}Game{id}AchList.json";
         }
 
-        public String validateHashList(Dictionary<String, String> hashMap)
+        public String validateHashList(Dictionary<String, Dictionary<String, String>> hashMap)
         {
             String rv = "";
-            foreach (KeyValuePair<String, String> kvp in hashMap)
+            foreach (KeyValuePair<String, Dictionary<String, String>> kvp in hashMap)
             {
-                if (kvp.Key.Contains("3 Ninjas"))
-                {
-
-                }
-                if (validHashes.Contains(kvp.Value))
+                if (validHashes.Contains(kvp.Value["hash"]))
                 {
                     rv = kvp.Key;
                     break;
                 }
             }
+            return rv;
+        }
+
+        public double getRetroRatio()
+        {
+            double rv = 0;
+            if (retroRatio == 0)
+            {
+                List<RetroAchievementsAchievemnt> achList = GetAllAchievments();
+
+                double rpTotal = 0;
+                double baseTotal = 0;
+
+                foreach (RetroAchievementsAchievemnt ach in achList)
+                {
+                    rpTotal += ach.retroRatio;
+                    baseTotal += ach.basePoints;
+                }
+
+                retroRatio = Math.Round(rpTotal / baseTotal, 2);
+                rv = retroRatio;
+            }
+            else
+            {
+                rv = retroRatio;
+            }
+
+
             return rv;
         }
 
@@ -427,11 +472,12 @@ namespace SteamAchievmentViewer
             javascript.Add("function updateHeaderIconPlus(elem) { elem.innerHTML = elem.innerHTML.replace(/^[\\-+]/, \"+\"); }");
             javascript.Add("function collapseAll(collapse) { if (collapse) { document.querySelectorAll('.dividerDiv').forEach(collapseFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconPlus);} else { document.querySelectorAll('.dividerDiv').forEach(expandFunc); document.querySelectorAll('.dividerHeader').forEach(updateHeaderIconMinus);}}");
             javascript.Add("function reloadFrame() {window.chrome.webview.postMessage('reload');}");
+            javascript.Add("function downloadRomForSelected(hash) {window.chrome.webview.postMessage('download-' + hash);}");
             javascript.Add("function sendCollapsedEvent(id) {window.chrome.webview.postMessage('collapsed-' + id);}");
             javascript.Add("function sendExpandEvent(id) {window.chrome.webview.postMessage('expanded-' + id);}");
 
 
-            html.Add($"<h1 id=\"{name}Header\">{name} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements {((isMastered()) ? $"(Mastered)" : (isBeaten()) ? $"(Beaten)" : "")}</h1>");
+            html.Add($"<h1 id=\"{name}Header\">{name} {GetAllAchievments().Where(a => a.getUnlockStatus()).Count()}/{GetAllAchievments().Count} Achievements {((isMastered()) ? $"(Mastered)" : (isBeaten()) ? $"(Beaten)" : "")} RR: ({getRetroRatio()})</h1>");
 
             // Add Controls
             if (showOfflineHeader)
@@ -454,6 +500,10 @@ namespace SteamAchievmentViewer
             if (guideURL != "")
             {
                 buttonHTML += $"<td><input type='button' value='Open Guide ...' onclick=\"window.location.href = '{guideURL}'\"></td>";
+            }
+            if (showIALink)
+            {
+                buttonHTML += $"<td><input type='button' value='Download Matching Rom ...' onclick=\"downloadRomForSelected('Hash')\"></td>";
             }
             buttonHTML += "</tr></table>";
             html.Add(buttonHTML);

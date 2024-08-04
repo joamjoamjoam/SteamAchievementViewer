@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            gamesListbox = new ListBox();
             achWebView = new Microsoft.Web.WebView2.WinForms.WebView2();
             sortByComboBox = new ComboBox();
             label1 = new Label();
@@ -43,22 +42,11 @@
             menuStrip1 = new MenuStrip();
             toolsToolStripMenuItem = new ToolStripMenuItem();
             setupEmudeckInstallToolStripMenuItem = new ToolStripMenuItem();
+            settingsToolStripMenuItem = new ToolStripMenuItem();
+            gamesListbox = new CheckedListBox();
             ((System.ComponentModel.ISupportInitialize)achWebView).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
-            // 
-            // gamesListbox
-            // 
-            gamesListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
-            gamesListbox.DrawMode = DrawMode.OwnerDrawFixed;
-            gamesListbox.FormattingEnabled = true;
-            gamesListbox.ItemHeight = 15;
-            gamesListbox.Location = new Point(12, 92);
-            gamesListbox.Name = "gamesListbox";
-            gamesListbox.Size = new Size(280, 439);
-            gamesListbox.TabIndex = 2;
-            gamesListbox.DrawItem += gamesListBoxDrawItem;
-            gamesListbox.SelectedIndexChanged += gamesListbox_SelectedIndexChanged;
             // 
             // achWebView
             // 
@@ -68,7 +56,7 @@
             achWebView.DefaultBackgroundColor = Color.White;
             achWebView.Location = new Point(298, 92);
             achWebView.Name = "achWebView";
-            achWebView.Size = new Size(863, 446);
+            achWebView.Size = new Size(863, 452);
             achWebView.TabIndex = 3;
             achWebView.ZoomFactor = 1D;
             // 
@@ -187,7 +175,7 @@
             // 
             // toolsToolStripMenuItem
             // 
-            toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { setupEmudeckInstallToolStripMenuItem });
+            toolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { setupEmudeckInstallToolStripMenuItem, settingsToolStripMenuItem });
             toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             toolsToolStripMenuItem.Size = new Size(46, 20);
             toolsToolStripMenuItem.Text = "Tools";
@@ -195,15 +183,35 @@
             // setupEmudeckInstallToolStripMenuItem
             // 
             setupEmudeckInstallToolStripMenuItem.Name = "setupEmudeckInstallToolStripMenuItem";
-            setupEmudeckInstallToolStripMenuItem.Size = new Size(190, 22);
-            setupEmudeckInstallToolStripMenuItem.Text = "Setup Emudeck Install";
+            setupEmudeckInstallToolStripMenuItem.Size = new Size(251, 22);
+            setupEmudeckInstallToolStripMenuItem.Text = "Calculate RA Hashes for ED Install";
             setupEmudeckInstallToolStripMenuItem.Click += setupEmudeckInstallToolStripMenuItem_Click;
+            // 
+            // settingsToolStripMenuItem
+            // 
+            settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            settingsToolStripMenuItem.Size = new Size(251, 22);
+            settingsToolStripMenuItem.Text = "Settings...";
+            settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
+            // 
+            // gamesListbox
+            // 
+            gamesListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            gamesListbox.FormattingEnabled = true;
+            gamesListbox.HorizontalScrollbar = true;
+            gamesListbox.Location = new Point(12, 90);
+            gamesListbox.Name = "gamesListbox";
+            gamesListbox.Size = new Size(280, 454);
+            gamesListbox.TabIndex = 16;
+            gamesListbox.ItemCheck += gamesListbox_ItemCheck;
+            gamesListbox.SelectedIndexChanged += gamesListbox_SelectedIndexChanged;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1173, 552);
+            Controls.Add(gamesListbox);
             Controls.Add(backBtn);
             Controls.Add(gameListSelectionCmbBox);
             Controls.Add(updateMapsBtn);
@@ -215,9 +223,9 @@
             Controls.Add(label1);
             Controls.Add(sortByComboBox);
             Controls.Add(achWebView);
-            Controls.Add(gamesListbox);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
+            MinimumSize = new Size(1189, 591);
             Name = "Form1";
             Text = "Steam Achievement Viewer";
             Load += Form1_Load;
@@ -230,7 +238,6 @@
         }
 
         #endregion
-        private ListBox gamesListbox;
         private Microsoft.Web.WebView2.WinForms.WebView2 achWebView;
         private ComboBox sortByComboBox;
         private Label label1;
@@ -245,5 +252,7 @@
         private MenuStrip menuStrip1;
         private ToolStripMenuItem toolsToolStripMenuItem;
         private ToolStripMenuItem setupEmudeckInstallToolStripMenuItem;
+        private CheckedListBox gamesListbox;
+        private ToolStripMenuItem settingsToolStripMenuItem;
     }
 }

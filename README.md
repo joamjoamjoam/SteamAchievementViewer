@@ -15,6 +15,15 @@ Just another Steam Achievement Viewer that supports custom grouping of acheivemn
 
 Offline Mode will show Achievments for any games you have previously viewed including your earned achievments. You must visit each game at least once before its available offline (Thanks Stea Rate Limiting)
 
+## RetroAchievments Game Hash Verification
+
+SAV will verify game hashes for an EmuDeck Installation against the RetroAchievements database. To calculate the hashes for your Emudeck installation:
+
+1. Set the path to the Emulation/roms folder in the Tools Menu
+2. Select the calculate RA Hashes for ED install option.
+3. Let the hashes calculate. THis can take a while for large libraries.
+4. Once complete the checkbox next to the game name will indicate if a matching hash was found for a given game.
+
 ## Achievment Map Creator
 Achievement Maps can be created in-app using the achievement map creator.
 1. Select the game that has the achievements you want to map

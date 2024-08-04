@@ -58,5 +58,65 @@ namespace SteamAchievmentViewer.Properties {
                 this["showHiddenTrophiesSet"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public ulong steamAcctID {
+            get {
+                return ((ulong)(this["steamAcctID"]));
+            }
+            set {
+                this["steamAcctID"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string steamWebAPIKey {
+            get {
+                return ((string)(this["steamWebAPIKey"]));
+            }
+            set {
+                this["steamWebAPIKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RAUsername {
+            get {
+                return ((string)(this["RAUsername"]));
+            }
+            set {
+                this["RAUsername"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string RAAPIKey {
+            get {
+                return ((string)(this["RAAPIKey"]));
+            }
+            set {
+                this["RAAPIKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string emuDeckRomsPath {
+            get {
+                return ((string)(this["emuDeckRomsPath"]));
+            }
+            set {
+                this["emuDeckRomsPath"] = value;
+            }
+        }
     }
 }
