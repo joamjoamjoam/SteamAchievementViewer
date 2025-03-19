@@ -346,14 +346,17 @@ namespace SteamAchievmentViewer
             achievements = new Dictionary<string, List<RetroAchievementsAchievemnt>>();
             guideURL = (json["GuideURL"] != null) ? (String)json["GuideURL"] : "";
             totalPlayers = (ulong)json["NumDistinctPlayers"];
-            totalBasePoints = (ulong)json["points_total"];
+            //totalBasePoints = (ulong)json["points_total"];
+            totalBasePoints = 0;
             foreach (String key in ((JObject)json["Achievements"]).Properties().Select(prop => prop.Name))
             {
                 if (!achievements.ContainsKey("Unmapped"))
                 {
                     achievements["Unmapped"] = new List<RetroAchievementsAchievemnt>();
                 }
-                achievements["Unmapped"].Add(new RetroAchievementsAchievemnt((JObject)json["Achievements"][key]));
+                RetroAchievementsAchievemnt ach = new RetroAchievementsAchievemnt((JObject)json["Achievements"][key]);
+                achievements["Unmapped"].Add(ach);
+                totalBasePoints += ach.basePoints;
             }
 
             foreach (String key in achievements.Keys)
@@ -497,7 +500,7 @@ namespace SteamAchievmentViewer
             }
             buttonHTML += "<td><input type='button' value='Refresh' onclick=\"reloadFrame()\"></td>";
             buttonHTML += $"<td><input type='button' value='Open in Web ...' onclick=\"window.location.href = '{webLink}'\"></td>";
-            if (guideURL != "")
+            if (guideURL != null && guideURL != "")
             {
                 buttonHTML += $"<td><input type='button' value='Open Guide ...' onclick=\"window.location.href = '{guideURL}'\"></td>";
             }
